@@ -5,4 +5,5 @@ package org.andrei.ppreader.service;
  */
 
 public class PPNovelChapter {
+    public String url;
 }

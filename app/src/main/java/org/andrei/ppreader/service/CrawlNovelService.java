@@ -16,7 +16,7 @@ import io.reactivex.schedulers.Schedulers;
 public class CrawlNovelService {
 
 
-    public static  CrawlNovelService Instance(){
+    public static  CrawlNovelService instance(){
         return m_s_ins;
     }
 
@@ -46,6 +46,7 @@ public class CrawlNovelService {
         Observable<PPNovel> observable = Observable.create(new ObservableOnSubscribe<PPNovel>() {
             @Override
             public void subscribe(ObservableEmitter<PPNovel> emitter) throws Exception {
+                Thread.sleep(5000);
                 emitter.onComplete();
             }
         });

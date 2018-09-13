@@ -3,26 +3,27 @@ package org.andrei.ppreader.service;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.reactivex.Observable;
+
 /**
  * Created by andrei on 2018/9/11.
  */
 
 public class CrawlNovel implements ICrawlNovel {
 
-
     @Override
-    public int search(String name, List<PPNovel> novels) {
-        return 0;
+    public Observable<PPNovel> search(String name) {
+        return null;
     }
 
     @Override
-    public int fetchChapters(String novelUrl, List<Character> chapters) {
-        return 0;
+    public Observable<CrawlChapterResult> fetchChapters(PPNovel novel) {
+        return null;
     }
 
     @Override
-    public int fetchNovelText(String chapterUrl, String text) {
-        return 0;
+    public Observable<CrawlTextResult> fetchNovelText(String novelId, String chapterUrl) {
+        return null;
     }
 
     protected CrawlNovel() {
@@ -40,5 +41,6 @@ public class CrawlNovel implements ICrawlNovel {
 
     private static ArrayList<ICrawlNovel> m_s_crawlNovelEngines = new ArrayList<ICrawlNovel>();
     private int m_currEngineIndex = -1;
+
 
 }
