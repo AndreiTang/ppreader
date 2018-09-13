@@ -1,14 +1,101 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#DBC49B"
+    android:orientation="vertical"
     tools:context=".ui.fragments.PPNovelSearchFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="70dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0"
+            android:gravity="center_vertical|left">
+
+            <ImageButton
+                android:id="@+id/novel_list"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dp"
+                android:background="#DBC49B"
+                android:src="@drawable/ic_keyboard_arrow_left_black_36dp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="@string/novel_search_title"
+            android:textColor="#000000"
+            android:textSize="20sp" />
+
+        <LinearLayout
+            android:layout_width="70dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0"></LinearLayout>
+
+    </LinearLayout>
+
+    <SearchView
+        android:id="@+id/book_search"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="15dp"
+        android:layout_marginRight="15dp"
+        android:background="@drawable/search_frame"
+        android:iconifiedByDefault="false"
+        android:queryHint="@string/novel_search_hint" />
+
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:layout_margin="18dp">
 
-</FrameLayout>
+        <ListView
+            android:id="@+id/novel_search_ret_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"></ListView>
+
+        <LinearLayout
+            android:id="@+id/novel_search_mask"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <!--<com.facebook.drawee.view.SimpleDraweeView-->
+            <!--android:id="@+id/searching_progress"-->
+            <!--android:layout_gravity="center"-->
+            <!--android:layout_width="116dp"-->
+            <!--android:layout_height="20dp"/>-->
+
+            <TextView
+                android:id="@+id/novel_searching_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="@string/novel_search_loading"
+                android:textColor="#9E9E9E"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/novel_searching_err"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</LinearLayout>

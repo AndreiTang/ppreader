@@ -3,4 +3,10 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="novel_list_title">我的书架</string>
+    <string name="novel_list_edit">编辑</string>
+    <string name="novel_list_search">搜索</string>
+    <string name="novel_search_title">书城搜索</string>
+    <string name="novel_search_hint">搜索书名</string>
+    <string name="novel_search_loading">正在搜索中...</string>
 </resources>

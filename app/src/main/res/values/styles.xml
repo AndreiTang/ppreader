@@ -6,6 +6,8 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <!--The blank page with white will be shown. Now this bug fix it -->
+        <item name="android:windowIsTranslucent">true</item>
     </style>
 
 </resources>
