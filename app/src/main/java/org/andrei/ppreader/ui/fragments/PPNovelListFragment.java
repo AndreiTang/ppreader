@@ -3,15 +3,20 @@ package org.andrei.ppreader.ui.fragments;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.GridView;
+
+import com.jakewharton.rxbinding2.view.RxView;
 
 import org.andrei.ppreader.R;
 import org.andrei.ppreader.service.CrawlChapterResult;
 import org.andrei.ppreader.service.CrawlNovel;
 import org.andrei.ppreader.service.CrawlNovelService;
 import org.andrei.ppreader.service.PPNovel;
+import org.andrei.ppreader.ui.adapters.PPNovelListAdapter;
 
 import java.util.ArrayList;
 
@@ -41,44 +46,11 @@ public class PPNovelListFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState){
         super.onActivityCreated(savedInstanceState);
 
-        CrawlNovel crawlNovel = CrawlNovelService .instance().builder();
-        ArrayList<PPNovel> checkList = new ArrayList<PPNovel>();
-        checkNovels(checkList, crawlNovel);
+        PPNovelListAdapter adapter = new PPNovelListAdapter(this);
+        GridView vp = (GridView) getView().findViewById(R.id.novel_list);
+        vp.setAdapter(adapter);
     }
-
-
-    private void checkNovels(final ArrayList<PPNovel> checkList, final CrawlNovel crawlNovel){
-        if(checkList.size() == 0){
-            return;
-        }
-
-        PPNovel novel =   checkList.remove(0);
-        crawlNovel.fetchChapters(novel).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<CrawlChapterResult>() {
-            @Override
-            public void onSubscribe(Disposable d) {
-
-            }
-
-            @Override
-            public void onNext(CrawlChapterResult value) {
-
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                checkNovels(checkList,crawlNovel);
-            }
-
-            @Override
-            public void onComplete() {
-                checkNovels(checkList,crawlNovel);
-            }
-        });
-
-    }
-
 
     private ArrayList<PPNovel> m_checkList = new ArrayList<PPNovel>();
-
 
 }

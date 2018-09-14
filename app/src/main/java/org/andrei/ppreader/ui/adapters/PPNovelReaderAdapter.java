@@ -15,7 +15,7 @@ import io.reactivex.disposables.Disposable;
 public class PPNovelReaderAdapter {
 
 
-    
+
     private void fetchChapterText(PPNovelChapter chapter){
         m_fetchList.add(chapter);
         if(!m_bRunning){
@@ -32,7 +32,7 @@ public class PPNovelReaderAdapter {
         }
         m_bRunning = true;
         PPNovelChapter chapter = m_fetchList.remove(0);
-        m_crawlNovel.fetchNovelText(m_novel.url,chapter.url).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<CrawlTextResult>() {
+        m_crawlNovel.fetchNovelText(m_novel.chapterUrl,chapter.url).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<CrawlTextResult>() {
             @Override
             public void onSubscribe(Disposable d) {
 

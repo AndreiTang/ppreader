@@ -79,7 +79,6 @@ public class PPNovelCoverFragment extends Fragment {
                 Fragment fragment = new PPNovelMainFragment();
                 FragmentTransaction transaction = activity.getSupportFragmentManager().beginTransaction();
                 transaction.replace(R.id.fragment_container,fragment);
-                transaction.addToBackStack(null);
                 transaction.commit();
             }
         });

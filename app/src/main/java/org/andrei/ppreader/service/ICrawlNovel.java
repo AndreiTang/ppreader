@@ -1,6 +1,7 @@
 package org.andrei.ppreader.service;
 
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.reactivex.Observable;
@@ -10,7 +11,7 @@ import io.reactivex.Observable;
  */
 
 public interface ICrawlNovel {
-    public Observable<PPNovel> search(String name);
+    public int search(String name, ArrayList<PPNovel> novels);
     public Observable<CrawlChapterResult> fetchChapters( PPNovel novel);
     public Observable<CrawlTextResult> fetchNovelText(String novelId, String chapterUrl);
 }
