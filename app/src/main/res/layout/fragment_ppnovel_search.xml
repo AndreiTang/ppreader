@@ -44,7 +44,7 @@
     </LinearLayout>
 
     <SearchView
-        android:id="@+id/book_search"
+        android:id="@+id/novel_search"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginLeft="15dp"
@@ -60,41 +60,68 @@
 
         <ListView
             android:id="@+id/novel_search_ret_list"
+            android:dividerHeight="25dp"
+            android:divider="#00000000"
             android:layout_width="match_parent"
             android:layout_height="match_parent"></ListView>
 
         <LinearLayout
-            android:id="@+id/novel_search_mask"
+            android:id="@+id/novel_search_loading_mask"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center"
             android:orientation="vertical"
             android:visibility="gone">
 
+            <ProgressBar
+                style="@android:style/Widget.ProgressBar.Large.Inverse"
+                android:layout_gravity="center"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
             <!--<com.facebook.drawee.view.SimpleDraweeView-->
             <!--android:id="@+id/searching_progress"-->
-            <!--android:layout_gravity="center"-->
+            <!--android:layout_gravity="center"android:layout_gravity="center"-->
             <!--android:layout_width="116dp"-->
             <!--android:layout_height="20dp"/>-->
 
             <TextView
-                android:id="@+id/novel_searching_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
+                android:layout_gravity="center"
                 android:text="@string/novel_search_loading"
                 android:textColor="#9E9E9E"
-                android:textSize="14sp"
+                android:textSize="18sp"
                 android:textStyle="bold" />
+        </LinearLayout>
 
+        <LinearLayout
+            android:orientation="vertical"
+            android:id="@+id/novel_search_error_mask"
+            android:gravity="center"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ImageView
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/err"
+                />
             <TextView
-                android:id="@+id/novel_searching_err"
+                android:layout_marginTop="10dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="16sp"
+                android:textColor="#9E9E9E"
+                android:textSize="20sp"
+                android:layout_marginLeft="8dp"
+                android:id="@+id/novel_search_err_msg"
                 android:textStyle="bold" />
 
         </LinearLayout>
+
 
     </FrameLayout>
 

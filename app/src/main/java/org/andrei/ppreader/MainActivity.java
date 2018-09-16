@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 
+
 import org.andrei.ppreader.ui.fragments.PPNovelCoverFragment;
 
 public class MainActivity extends FragmentActivity {
@@ -21,7 +22,7 @@ public class MainActivity extends FragmentActivity {
         setContentView(R.layout.activity_main);
         if(savedInstanceState == null){
             PPNovelCoverFragment fragment = new PPNovelCoverFragment();
-            getSupportFragmentManager().beginTransaction().add(R.id.fragment_container,fragment).commit();
+            getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,fragment).commit();
         }
         else{
 

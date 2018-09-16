@@ -13,7 +13,13 @@
     <string name="novel_search_title">书城搜索</string>
     <string name="novel_search_hint">搜索书名</string>
     <string name="novel_search_loading">正在搜索中...</string>
+    <string name="novel_search_foot">加载中...</string>
+    <string name="novel_type_ing">连载</string>
+    <string name="novel_type_over">完结</string>
     <string name="novel_list_remove_msg">是否要删除%1$s？</string>
     <string name="btn_ok">确定</string>
     <string name="btn_cancel">取消</string>
+    <string name="err_not_found">主人，没找到啊...</string>
+    <string name="err_network">主人，网络挂了...</string>
+
 </resources>

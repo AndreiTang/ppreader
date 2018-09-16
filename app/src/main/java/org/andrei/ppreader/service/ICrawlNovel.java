@@ -11,7 +11,7 @@ import io.reactivex.Observable;
  */
 
 public interface ICrawlNovel {
-    public int search(String name, ArrayList<PPNovel> novels);
+    public Observable<PPNovel> search(String name);
     public Observable<CrawlChapterResult> fetchChapters( PPNovel novel);
     public Observable<CrawlTextResult> fetchNovelText(String novelId, String chapterUrl);
 }

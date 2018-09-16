@@ -7,9 +7,13 @@ import java.util.ArrayList;
  */
 
 public class PPNovel {
+
     public static final int STATUS_UNCHECKED = 0;
     public static final int STATUS_CHECKED = 1;
     public static final int STATUS_CONFIRMED = 2;
+    public static final int TYPE_ING = 0;
+    public static final int TYPE_OVER = 1;
+
     public int engineIndex;
     public String chapterUrl;
     public String imgUrl;
@@ -19,4 +23,5 @@ public class PPNovel {
     public int status = STATUS_UNCHECKED;
     public ArrayList<PPNovelChapter> chapters = new ArrayList<PPNovelChapter>();
     public boolean needRemove = false;
+    public int type = TYPE_ING;
 }
