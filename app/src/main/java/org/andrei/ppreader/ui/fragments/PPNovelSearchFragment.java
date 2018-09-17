@@ -37,13 +37,8 @@ public class PPNovelSearchFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState){
         super.onActivityCreated(savedInstanceState);
 
-        //set the height of the divider and set it to be transparent.
         ListView lv = (ListView) getView().findViewById(R.id.novel_search_ret_list);
         lv.setFooterDividersEnabled(false);
-//        float dividerHigh = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 25, getResources().getDisplayMetrics());
-//        lv.setDividerHeight((int) dividerHigh);
-//        Drawable dw = lv.getDivider();
-//        dw.setAlpha(0);
         lv.setSelected(true);
         lv.setVerticalScrollBarEnabled(false);
 

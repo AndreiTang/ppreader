@@ -51,6 +51,5 @@ public class PPNovelListFragment extends Fragment {
         vp.setAdapter(adapter);
     }
 
-    private ArrayList<PPNovel> m_checkList = new ArrayList<PPNovel>();
 
 }

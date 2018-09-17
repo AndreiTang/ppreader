@@ -3,6 +3,7 @@ package org.andrei.ppreader.ui.fragments;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +14,7 @@ import org.andrei.ppreader.service.CrawlNovelService;
 import org.andrei.ppreader.service.CrawlTextResult;
 import org.andrei.ppreader.service.PPNovel;
 import org.andrei.ppreader.service.PPNovelChapter;
+import org.andrei.ppreader.ui.adapters.PPNovelReaderAdapter;
 
 import java.util.ArrayList;
 
@@ -39,7 +41,11 @@ public class PPNovelReaderFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_ppnovel_reader, container, false);
     }
 
-
-
-
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState){
+        super.onActivityCreated(savedInstanceState);
+        ViewPager vp = (ViewPager) getView().findViewById(R.id.novel_reader_pager);
+        PPNovelReaderAdapter adapter = new PPNovelReaderAdapter(this);
+        vp.setAdapter(adapter);
+    }
 }

@@ -15,12 +15,12 @@ import static io.reactivex.Observable.create;
 
 public class Crawl88dusNovel implements ICrawlNovel {
     @Override
-    public int search(String name, ArrayList<PPNovel> novels) {
+    public Observable<PPNovel> search(String name) {
 
         //mock data
 
 
-        return 0;
+        return null;
     }
 
     @Override
