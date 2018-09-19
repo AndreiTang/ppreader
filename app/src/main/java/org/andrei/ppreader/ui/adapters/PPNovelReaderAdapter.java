@@ -135,6 +135,7 @@ public class PPNovelReaderAdapter extends PagerAdapter {
 
     public PPNovelReaderAdapter(Fragment parent){
         m_parent = parent;
+        //mock
         PPNovelTextPage page = new PPNovelTextPage();
         page.text = examp;
         page.title = title;
