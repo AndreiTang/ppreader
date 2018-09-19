@@ -109,35 +109,6 @@ public class PPNovelListAdapter extends BaseAdapter{
     }
 
     private void initialize(){
-        View v = m_parent.getView().findViewById(R.id.novel_list_edit_btn);
-        final PPNovelListAdapter that = this;
-
-        RxView.clicks(v).throttleFirst(1,TimeUnit.SECONDS).subscribe(new Consumer<Object>() {
-            @Override
-            public void accept(Object o) throws Exception {
-                m_parent.getView().findViewById(R.id.novel_list_edit_btn).setVisibility(View.GONE);
-                m_parent.getView().findViewById(R.id.novel_list_remove_btn).setVisibility(View.VISIBLE);
-                ArrayList<PPNovel> novels = CrawlNovelService.instance().getPPNovels();
-                for(PPNovel novel: novels){
-                    novel.needRemove = true;
-                }
-                that.notifyDataSetChanged();
-            }
-        });
-        v = m_parent.getView().findViewById(R.id.novel_list_remove_btn);
-        RxView.clicks(v).throttleFirst(1,TimeUnit.SECONDS).subscribe(new Consumer<Object>() {
-            @Override
-            public void accept(Object o) throws Exception {
-                m_parent.getView().findViewById(R.id.novel_list_edit_btn).setVisibility(View.VISIBLE);
-                m_parent.getView().findViewById(R.id.novel_list_remove_btn).setVisibility(View.GONE);
-                ArrayList<PPNovel> novels = CrawlNovelService.instance().getPPNovels();
-                for(PPNovel novel: novels){
-                    novel.needRemove = false;
-                }
-                that.notifyDataSetChanged();
-            }
-        });
-
         CrawlNovel crawlNovel = CrawlNovelService .instance().builder();
         ArrayList<PPNovel> checkList = new ArrayList<PPNovel>();
         for(PPNovel novel: CrawlNovelService.instance().getPPNovels()){

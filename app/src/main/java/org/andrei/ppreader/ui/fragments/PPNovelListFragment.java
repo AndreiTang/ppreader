@@ -19,10 +19,12 @@ import org.andrei.ppreader.service.PPNovel;
 import org.andrei.ppreader.ui.adapters.PPNovelListAdapter;
 
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -49,6 +51,35 @@ public class PPNovelListFragment extends Fragment {
         PPNovelListAdapter adapter = new PPNovelListAdapter(this);
         GridView vp = (GridView) getView().findViewById(R.id.novel_list);
         vp.setAdapter(adapter);
+
+        View v = getView().findViewById(R.id.novel_list_edit_btn);
+        final PPNovelListAdapter that = adapter;
+
+        RxView.clicks(v).throttleFirst(1, TimeUnit.SECONDS).subscribe(new Consumer<Object>() {
+            @Override
+            public void accept(Object o) throws Exception {
+                getView().findViewById(R.id.novel_list_edit_btn).setVisibility(View.GONE);
+                getView().findViewById(R.id.novel_list_remove_btn).setVisibility(View.VISIBLE);
+                ArrayList<PPNovel> novels = CrawlNovelService.instance().getPPNovels();
+                for(PPNovel novel: novels){
+                    novel.needRemove = true;
+                }
+                that.notifyDataSetChanged();
+            }
+        });
+        v = getView().findViewById(R.id.novel_list_remove_btn);
+        RxView.clicks(v).throttleFirst(1,TimeUnit.SECONDS).subscribe(new Consumer<Object>() {
+            @Override
+            public void accept(Object o) throws Exception {
+                getView().findViewById(R.id.novel_list_edit_btn).setVisibility(View.VISIBLE);
+                getView().findViewById(R.id.novel_list_remove_btn).setVisibility(View.GONE);
+                ArrayList<PPNovel> novels = CrawlNovelService.instance().getPPNovels();
+                for(PPNovel novel: novels){
+                    novel.needRemove = false;
+                }
+                that.notifyDataSetChanged();
+            }
+        });
     }
 
 

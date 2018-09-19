@@ -22,8 +22,8 @@ public class MainActivity extends FragmentActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         if(savedInstanceState == null){
-            //PPNovelCoverFragment fragment = new PPNovelCoverFragment();
-            PPNovelReaderFragment fragment = new PPNovelReaderFragment();
+            PPNovelCoverFragment fragment = new PPNovelCoverFragment();
+            //PPNovelReaderFragment fragment = new PPNovelReaderFragment();
             getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,fragment).commit();
         }
         else{

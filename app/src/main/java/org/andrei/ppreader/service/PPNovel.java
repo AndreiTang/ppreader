@@ -24,4 +24,6 @@ public class PPNovel {
     public ArrayList<PPNovelChapter> chapters = new ArrayList<PPNovelChapter>();
     public boolean needRemove = false;
     public int type = TYPE_ING;
+    public int currentChapterIndex= 0;
+    public int getCurrentChapterOffset = 0;
 }

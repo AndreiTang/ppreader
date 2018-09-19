@@ -192,7 +192,7 @@ public class PPNovelReaderAdapter extends PagerAdapter {
 
     @Override
     public void destroyItem(ViewGroup container, int position, Object object) {
-
+        container.removeView((View)object);
     }
 
     private void reallocateText(final TextView tv,final String text, final String title,final int pos ){
@@ -240,7 +240,7 @@ public class PPNovelReaderAdapter extends PagerAdapter {
                         i--;
                     }
                     page = new PPNovelTextPage();
-                    m_pages.add(page);
+                    m_pages.add(pos+offset,page);
                 }
                 page.isSplited = true;
                 page.offset = offset;

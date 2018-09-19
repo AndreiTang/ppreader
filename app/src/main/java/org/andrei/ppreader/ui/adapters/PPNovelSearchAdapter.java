@@ -35,7 +35,7 @@ public class PPNovelSearchAdapter extends BaseAdapter {
 
     public PPNovelSearchAdapter(Fragment parent) {
         m_parent = parent;
-        initialize();
+        //initialize();
     }
 
     @Override
@@ -61,6 +61,16 @@ public class PPNovelSearchAdapter extends BaseAdapter {
         updateView(i, view);
 
         return view;
+    }
+
+    public void reset(){
+        m_searches.clear();
+        notifyDataSetChanged();
+    }
+
+    public void addSearch(PPNovel novel){
+        m_searches.add(novel);
+        notifyDataSetChanged();
     }
 
     private View createView(int i, ViewGroup vp) {
@@ -98,132 +108,6 @@ public class PPNovelSearchAdapter extends BaseAdapter {
 
     }
 
-    private void search(String name) {
-        reset();
-        CrawlNovel crawlNovel = CrawlNovelService.instance().builder();
-        m_isLoading = true;
-        showLoadingMask(true);
-        crawlNovel.search(name).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<PPNovel>() {
-            @Override
-            public void onSubscribe(Disposable d) {
-
-            }
-
-            @Override
-            public void onNext(PPNovel ppNovel) {
-                m_searches.add(ppNovel);
-                notifyDataSetChanged();
-                showLoadingMask(false);
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                m_isLoading = false;
-                int err = Integer.valueOf(e.getMessage());
-                showErrorMask(err);
-            }
-
-            @Override
-            public void onComplete() {
-                m_isLoading = false;
-                ListView lv = (ListView) m_parent.getView().findViewById(R.id.novel_search_ret_list);
-                if(lv.getFooterViewsCount() == 1){
-                   lv.removeFooterView(m_footView);
-                }
-            }
-        });
-    }
-
-    private void initialize(){
-        if(m_parent == null){
-            return;
-        }
-
-        m_footView = m_parent.getLayoutInflater().inflate(R.layout.view_ppnovel_search_foot,null);
-//        SimpleDraweeView pv = (SimpleDraweeView) m_footView.findViewById(R.id.search_progress);
-//        Uri uri = Uri.parse("res://" + m_parent.getContext().getPackageName() + "/" + R.drawable.progress_small);
-//        DraweeController controller = Fresco.newDraweeControllerBuilder()
-//                .setUri(uri)
-//                .setAutoPlayAnimations(true)
-//                .build();
-//        pv.setController(controller);
-
-
-        final PPNovelSearchAdapter that = this;
-        SearchView sv = (SearchView) m_parent.getActivity().findViewById(R.id.novel_search);
-        sv.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-               search(query);
-                return false;
-            }
-
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                return false;
-            }
-        });
-
-        ListView lv = (ListView) m_parent.getView().findViewById(R.id.novel_search_ret_list);
-        lv.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                insertFootView();
-            }
-        });
-
-    }
-
-    private void insertFootView(){
-        ListView lv = (ListView) m_parent.getView().findViewById(R.id.novel_search_ret_list);
-        if(lv.getChildCount() == 0 || !m_isLoading ){
-            return;
-        }
-        int pos = lv.getLastVisiblePosition();
-        View v = lv.getChildAt(pos);
-        if( v != null && v.getBottom() >= lv.getBottom() && lv.getFooterViewsCount() == 0){
-            lv.addFooterView(m_footView);
-        }
-    }
-
-    private void reset(){
-        ListView lv = (ListView) m_parent.getView().findViewById(R.id.novel_search_ret_list);
-        if(lv.getFooterViewsCount() == 1){
-            lv.removeFooterView(m_footView);
-        }
-        m_searches.clear();
-        m_parent.getView().findViewById(R.id.novel_search_loading_mask).setVisibility(View.GONE);
-        m_parent.getView().findViewById(R.id.novel_search_error_mask).setVisibility(View.GONE);
-        notifyDataSetChanged();
-    }
-
-    private void showLoadingMask(boolean isShow){
-        if(m_parent == null){
-            return;
-        }
-        if(isShow == true){
-            m_parent.getView().findViewById(R.id.novel_search_loading_mask).setVisibility(View.VISIBLE);
-        }
-        else{
-            m_parent.getView().findViewById(R.id.novel_search_loading_mask).setVisibility(View.GONE);
-        }
-
-        m_parent.getView().findViewById(R.id.novel_search_error_mask).setVisibility(View.GONE);
-    }
-
-    private void showErrorMask(int err){
-        if(m_parent == null){
-            return;
-        }
-        m_parent.getView().findViewById(R.id.novel_search_loading_mask).setVisibility(View.GONE);
-        m_parent.getView().findViewById(R.id.novel_search_error_mask).setVisibility(View.VISIBLE);
-        TextView tx = (TextView) m_parent.getView().findViewById(R.id.novel_search_err_msg);
-        tx.setText(err);
-
-    }
-
     private ArrayList<PPNovel> m_searches = new ArrayList<PPNovel>();
     private Fragment m_parent = null;
-    private View m_footView = null;
-    private boolean  m_isLoading = false;
 }
