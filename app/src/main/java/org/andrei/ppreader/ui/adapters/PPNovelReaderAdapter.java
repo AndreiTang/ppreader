@@ -142,13 +142,12 @@ public class PPNovelReaderAdapter extends PagerAdapter {
     public Object instantiateItem(ViewGroup container, int position){
         View v = m_parent.getActivity().getLayoutInflater().inflate(R.layout.view_ppnovel_reader,null);
         final TextView tv = (TextView)v.findViewById(R.id.novel_reader_text);
-        tv.setText(half2full(examp));
+        String newText = autoSplitText(tv,half2full(examp));
+        tv.setText(newText);
         tv.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
                 tv.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                final String newText = autoSplitText(tv);
-                tv.setText(newText);
             }
         });
         container.addView(v);
@@ -156,12 +155,14 @@ public class PPNovelReaderAdapter extends PagerAdapter {
     }
 
 
-    private String autoSplitText(final TextView tv) {
-        final String rawText = tv.getText().toString(); //原始文本
+    private String autoSplitText(final TextView tv,final String rawText) {
+        //String rawText = tv.getText().toString();
         final Paint tvPaint = tv.getPaint(); //paint，包含字体等信息
         final float tvSpace = tvPaint.measureText(String.valueOf("，")) + 5;
         final float tvWidth = tv.getWidth() - tv.getPaddingLeft() - tv.getPaddingRight() - tvSpace; //控件可用宽度
         final float height = tv.getHeight();
+        final String flags = "，。：“‘！？";
+
 
         //将原始文本按行拆分
         String [] rawTextLines = rawText.replaceAll("\r", "").split("\n");
@@ -179,9 +180,11 @@ public class PPNovelReaderAdapter extends PagerAdapter {
                     if (lineWidth <= tvWidth) {
                         sbNewText.append(ch);
                     } else {
-
-                        if(ch ==  '，'){
+                        if(flags.indexOf(ch) !=-1 ){
                             sbNewText.append(ch);
+                            if((cnt + 1)<  rawTextLine.length()&&rawTextLine.charAt(cnt+1) == '\n'){
+                                cnt++;
+                            }
                         }
                         else{
                             --cnt;
@@ -194,11 +197,9 @@ public class PPNovelReaderAdapter extends PagerAdapter {
             sbNewText.append("\n");
         }
 
-        //把结尾多余的\n去掉
         if (!rawText.endsWith("\n")) {
             sbNewText.deleteCharAt(sbNewText.length() - 1);
         }
-
         return sbNewText.toString();
     }
 
@@ -254,6 +255,10 @@ public class PPNovelReaderAdapter extends PagerAdapter {
     private ArrayList<PPNovelChapter> m_fetchList = new ArrayList<PPNovelChapter>();
     private boolean m_bRunning = false;
     private Fragment m_parent;
+
+    class TextPage{
+
+    }
 
 
 }
