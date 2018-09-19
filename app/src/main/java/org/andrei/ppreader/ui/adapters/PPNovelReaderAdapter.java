@@ -1,9 +1,14 @@
 package org.andrei.ppreader.ui.adapters;
 
+import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
+import android.text.SpannableString;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -15,7 +20,8 @@ import org.andrei.ppreader.service.CrawlNovelService;
 import org.andrei.ppreader.service.CrawlTextResult;
 import org.andrei.ppreader.service.PPNovel;
 import org.andrei.ppreader.service.PPNovelChapter;
-import org.w3c.dom.Text;
+import org.andrei.ppreader.ui.PPNovelTitleCenterBoldSpan;
+
 
 import java.util.ArrayList;
 
@@ -23,12 +29,15 @@ import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 
-import static org.andrei.ppreader.Utils.half2full;
+import static org.andrei.ppreader.ui.Utils.autoSplitText;
+import static org.andrei.ppreader.ui.Utils.half2full;
 
 public class PPNovelReaderAdapter extends PagerAdapter {
 
 
-    String examp = "浓烟滚滚，每吸一口都发出破烂风箱般粗重的声音，像是在灼烧着咽喉和肺部，夏风的意识很快就模糊起来。\n" +
+    String title = "\n第一章 今天开始做王子\n\n";
+    String examp =
+            "浓烟滚滚，每吸一口都发出破烂风箱般粗重的声音，像是在灼烧着咽喉和肺部，夏风的意识很快就模糊起来。\n" +
             "\n" +
             "　　“不能，不能睡过去，会死的。”\n" +
             "\n" +
@@ -126,11 +135,15 @@ public class PPNovelReaderAdapter extends PagerAdapter {
 
     public PPNovelReaderAdapter(Fragment parent){
         m_parent = parent;
+        PPNovelTextPage page = new PPNovelTextPage();
+        page.text = examp;
+        page.title = title;
+        m_pages.add(page);
     }
 
     @Override
     public int getCount() {
-        return 1;
+        return m_pages.size();
     }
 
     @Override
@@ -142,65 +155,106 @@ public class PPNovelReaderAdapter extends PagerAdapter {
     public Object instantiateItem(ViewGroup container, int position){
         View v = m_parent.getActivity().getLayoutInflater().inflate(R.layout.view_ppnovel_reader,null);
         final TextView tv = (TextView)v.findViewById(R.id.novel_reader_text);
-        String newText = autoSplitText(tv,half2full(examp));
-        tv.setText(newText);
-        tv.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                tv.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+        final PPNovelTextPage page = m_pages.get(position);
+        if(page.isSplited){
+            if(page.offset == 0){
+                setZeroOffsetPageText(tv,page.text);
             }
-        });
+            else{
+                tv.setText(page.text);
+            }
+        }
+        else{
+            final String text = half2full(page.text);
+            final int pos = position;
+            tv.setText(text);
+            tv.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    tv.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    reallocateText(tv,text,page.title,pos);
+                }
+            });
+        }
         container.addView(v);
         return v;
     }
 
+    @Override
+    public int getItemPosition(Object object) {
+        if (m_bNeedUpdate) {
+            m_bNeedUpdate = false;
+            return POSITION_NONE;
+        } else {
+            return super.getItemPosition(object);
+        }
+    }
 
-    private String autoSplitText(final TextView tv,final String rawText) {
-        //String rawText = tv.getText().toString();
-        final Paint tvPaint = tv.getPaint(); //paint，包含字体等信息
-        final float tvSpace = tvPaint.measureText(String.valueOf("，")) + 5;
-        final float tvWidth = tv.getWidth() - tv.getPaddingLeft() - tv.getPaddingRight() - tvSpace; //控件可用宽度
-        final float height = tv.getHeight();
-        final String flags = "，。：“‘！？";
+    @Override
+    public void destroyItem(ViewGroup container, int position, Object object) {
 
+    }
 
-        //将原始文本按行拆分
-        String [] rawTextLines = rawText.replaceAll("\r", "").split("\n");
-        StringBuilder sbNewText = new StringBuilder();
-        for (String rawTextLine : rawTextLines) {
-            if (tvPaint.measureText(rawTextLine) <= tvWidth) {
-                //如果整行宽度在控件可用宽度之内，就不处理了
-                sbNewText.append(rawTextLine);
-            } else {
-                //如果整行宽度超过控件可用宽度，则按字符测量，在超过可用宽度的前一个字符处手动换行
-                float lineWidth = 0;
-                for (int cnt = 0; cnt != rawTextLine.length(); ++cnt) {
-                    char ch = rawTextLine.charAt(cnt);
-                    lineWidth += tvPaint.measureText(String.valueOf(ch));
-                    if (lineWidth <= tvWidth) {
-                        sbNewText.append(ch);
-                    } else {
-                        if(flags.indexOf(ch) !=-1 ){
-                            sbNewText.append(ch);
-                            if((cnt + 1)<  rawTextLine.length()&&rawTextLine.charAt(cnt+1) == '\n'){
-                                cnt++;
-                            }
-                        }
-                        else{
-                            --cnt;
-                        }
-                        sbNewText.append("\n");
-                        lineWidth = 0;
+    private void reallocateText(final TextView tv,final String text, final String title,final int pos ){
+        String newText = title +  autoSplitText(tv,text);
+        setZeroOffsetPageText(tv,newText);
+        tv.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                tv.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                splitText(tv,pos);
+            }
+        });
+    }
+    private void setZeroOffsetPageText(final TextView tv,final String text){
+        SpannableString sp = new SpannableString(text);
+        int end = text.indexOf('\n',1) ;
+        float fontSize =  TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 18, tv.getResources().getDisplayMetrics());
+        float padding =  TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, tv.getResources().getDisplayMetrics());
+        sp.setSpan(new PPNovelTitleCenterBoldSpan(fontSize,padding),1,end+1,0);
+        tv.setText(sp);
+    }
+
+    private void splitText(TextView tv,int pos){
+        String text = tv.getText().toString();
+        float height = tv.getHeight();
+        int count = tv.getLineCount();
+        float txtHeight = 0;
+        float endLineBottomMargin = tv.getLineSpacingExtra();
+        int offset  = 0;
+        int begin = 0;
+        Rect rc = new Rect();
+        for(int i = 0; i < count; i++){
+            tv.getLineBounds(i,rc);
+            txtHeight += rc.height();
+            if(txtHeight >= height || i == count - 1){
+                PPNovelTextPage page = null;
+                if(begin == 0){
+                    //the height of the title should be greater than the normal line, because the title font size is more bigger. But the system thinks they are the sane height, we should -1 ,
+                    // otherwise, the text will be beyond the page
+                    page = m_pages.get(pos);
+                    i --;
+                }
+                else{
+                    if(txtHeight - endLineBottomMargin > height ){
+                        i--;
                     }
+                    page = new PPNovelTextPage();
+                    m_pages.add(page);
+                }
+                page.isSplited = true;
+                page.offset = offset;
+                offset++;
+                int end = tv.getLayout().getLineEnd(i);
+                page.text = text.substring(begin, end);
+                if(i != count - 1){
+                    begin = tv.getLayout().getLineStart(i + 1);
+                    txtHeight = 0;
                 }
             }
-            sbNewText.append("\n");
         }
-
-        if (!rawText.endsWith("\n")) {
-            sbNewText.deleteCharAt(sbNewText.length() - 1);
-        }
-        return sbNewText.toString();
+        m_bNeedUpdate = true;
+        this.notifyDataSetChanged();
     }
 
     private void fetchChapterText(PPNovelChapter chapter){
@@ -255,10 +309,15 @@ public class PPNovelReaderAdapter extends PagerAdapter {
     private ArrayList<PPNovelChapter> m_fetchList = new ArrayList<PPNovelChapter>();
     private boolean m_bRunning = false;
     private Fragment m_parent;
+    private ArrayList<PPNovelTextPage> m_pages = new ArrayList<PPNovelTextPage>();
+    private boolean m_bNeedUpdate = false;
 
-    class TextPage{
-
+    class PPNovelTextPage{
+        public String text;
+        public int offset = 0;
+        public boolean isSplited = false;
+        public String title;
+        int chapterIndex = 0;
     }
-
 
 }

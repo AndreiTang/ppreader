@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <TextView
         android:paddingLeft="20dp"
         android:id="@+id/novel_reader_text"
-        android:textSize="22sp"
-        android:text="123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-        android:layout_gravity="left|bottom"
+        android:textSize="17sp"
+        android:lineSpacingExtra="12dp"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
