@@ -250,7 +250,7 @@ public class PPNovelReaderAdapter extends PagerAdapter {
     private Fragment m_parent;
     private ArrayList<PPNovelTextPage> m_pages = new ArrayList<PPNovelTextPage>();
     private boolean m_bNeedUpdate = false;
-    private IClickItem m_callback = null;
+    private ClickPPNovelChapter m_callback = null;
     private ArrayList<View> m_views = new ArrayList<View>();
 
     static public class PPNovelTextPage{
@@ -268,7 +268,7 @@ public class PPNovelReaderAdapter extends PagerAdapter {
         public int status = STATUS_INIT;
     }
 
-    public interface IClickItem{
-      void onClick(int chapterIndex);
+    public interface ClickPPNovelChapter{
+      void onClick(String chapter);
     };
 }

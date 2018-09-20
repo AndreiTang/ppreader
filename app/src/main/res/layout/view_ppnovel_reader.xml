@@ -37,6 +37,7 @@
 
     <LinearLayout
         android:orientation="vertical"
+        android:gravity="center"
         android:id="@+id/novel_reader_err"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -54,7 +55,7 @@
             android:textColor="#9E9E9E"
             android:textSize="20sp"
             android:layout_marginLeft="8dp"
-            android:id="@+id/novel_search_err_msg"
+            android:text="@string/novel_reader_err_msg"
             android:textStyle="bold" />
 
     </LinearLayout>

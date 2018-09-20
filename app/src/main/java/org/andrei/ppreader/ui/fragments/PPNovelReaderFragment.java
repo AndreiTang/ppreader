@@ -68,7 +68,13 @@ public class PPNovelReaderFragment extends Fragment {
                 if (item.status == PPNovelReaderAdapter.PPNovelTextPage.STATUS_INIT) {
                     item.status = PPNovelReaderAdapter.PPNovelTextPage.STATUS_LOADING;
                     fetchChapterText(chapter);
-                } else {
+                }
+                else if(item.status == PPNovelReaderAdapter.PPNovelTextPage.STATUS_LOADING && chapter.text.length() > 0){
+                    item.text = chapter.text;
+                    item.status = PPNovelReaderAdapter.PPNovelTextPage.STATUS_OK;
+                    adapter.update(position);
+                }
+                else {
                     adapter.update(position);
                 }
 
@@ -130,11 +136,11 @@ public class PPNovelReaderFragment extends Fragment {
                 }
                 PPNovelReaderAdapter.PPNovelTextPage page = adapter.getItemByChapter(value.chapterUrl);
                 assert (page != null);
-                page.text = value.text;
-                page.status = PPNovelReaderAdapter.PPNovelTextPage.STATUS_OK;
                 int index = adapter.getItemPositionByChapter(value.chapterUrl);
                 int curr = vp.getCurrentItem();
                 if (curr <= index) {
+                    page.text = value.text;
+                    page.status = PPNovelReaderAdapter.PPNovelTextPage.STATUS_OK;
                     adapter.update(index);
                 }
 

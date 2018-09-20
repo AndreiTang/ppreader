@@ -241,7 +241,15 @@ public class CrawlNovel implements ICrawlNovel {
 
 
                 Thread.sleep(6000);
-                e.onNext(ret);
+                CrawlNovelThrowable throwable = new CrawlNovelThrowable();
+                throwable.chapterUrl = chapterUrl;
+                throwable.novelUrl = novelId;
+                if(chapterUrl.compareTo("2") == 0){
+                    e.onNext(ret);
+                }else{
+                    e.onError(throwable);
+                }
+                //
 
                 e.onComplete();
             }
