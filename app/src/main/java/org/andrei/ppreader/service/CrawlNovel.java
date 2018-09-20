@@ -242,6 +242,7 @@ public class CrawlNovel implements ICrawlNovel {
 
                 Thread.sleep(6000);
                 e.onNext(ret);
+
                 e.onComplete();
             }
         }).subscribeOn(Schedulers.io());

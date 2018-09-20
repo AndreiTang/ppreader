@@ -117,6 +117,11 @@ public class MockData {
         chapter.name = "\n第二章  随自己而来的\n\n";
         novel.chapters.add(chapter);
 
+        chapter = new PPNovelChapter();
+        chapter.url="3";
+        chapter.name = "\n第四章  随自己而来的\n\n";
+        novel.chapters.add(chapter);
+
     }
 
 
