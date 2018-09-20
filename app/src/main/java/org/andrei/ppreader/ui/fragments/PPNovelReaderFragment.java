@@ -27,7 +27,7 @@ import io.reactivex.disposables.Disposable;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class PPNovelReaderFragment extends Fragment {
+public class PPNovelReaderFragment extends Fragment implements PPNovelReaderAdapter.ClickPPNovelChapter{
 
 
     public PPNovelReaderFragment() {
@@ -51,7 +51,7 @@ public class PPNovelReaderFragment extends Fragment {
 
         super.onActivityCreated(savedInstanceState);
         ViewPager vp = (ViewPager) getView().findViewById(R.id.novel_reader_pager);
-        final PPNovelReaderAdapter adapter = new PPNovelReaderAdapter(this);
+        final PPNovelReaderAdapter adapter = new PPNovelReaderAdapter(this,this);
         vp.setAdapter(adapter);
         vp.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
 
@@ -101,6 +101,12 @@ public class PPNovelReaderFragment extends Fragment {
             }
             adapter.notifyDataSetChanged();
         }
+    }
+
+    @Override
+    public void onClick(String chapter) {
+        PPNovelChapter it = m_novel.getPPNovelChapter(chapter);
+        fetchChapterText(it);
     }
 
     private void fetchChapterText(PPNovelChapter chapter) {
@@ -186,4 +192,6 @@ public class PPNovelReaderFragment extends Fragment {
     private PPNovel m_novel;
     private ArrayList<PPNovelChapter> m_fetchList = new ArrayList<PPNovelChapter>();
     private boolean m_bRunning = false;
+
+
 }
