@@ -1,6 +1,9 @@
 <resources>
 
     <item name="tag_pos" type="id">pos</item>
+    <item name="tag_chapter" type="id">chapter</item>
+    <item name="tag_status" type="id">status</item>
+
 
     <string name="app_name">爬耙读书</string>
 
@@ -21,5 +24,7 @@
     <string name="btn_cancel">取消</string>
     <string name="err_not_found">主人，没找到啊...</string>
     <string name="err_network">主人，网络挂了...</string>
+    <string name="novel_reader_loading">主人，正在搬运中...</string>
+    <string name="novel_reader_err_msg">主人，再戮我一下...</string>
 
 </resources>

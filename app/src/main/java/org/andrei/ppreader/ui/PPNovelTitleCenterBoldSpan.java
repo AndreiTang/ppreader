@@ -15,19 +15,17 @@ public class PPNovelTitleCenterBoldSpan extends ReplacementSpan {
 
     @Override
     public int getSize(@NonNull Paint paint, CharSequence charSequence, int i, int i1, @Nullable Paint.FontMetricsInt fontMetricsInt) {
-        Paint src = getTitlePaint(paint);
-        String text = charSequence.subSequence(i, i1).toString();
-        return (int)src.measureText(text);
+        return 0;
     }
 
     @Override
     public void draw(@NonNull Canvas canvas, CharSequence charSequence, int i, int i1, float v, int i2, int i3, int i4, @NonNull Paint paint) {
         Paint src = getTitlePaint(paint);
         String text = charSequence.subSequence(i, i1).toString();
-        String newText = autoChangeTextByCanvasWidth(text,src,canvas);
+        String newText = autoChangeTextByCanvasWidth(text,src,canvas.getWidth());
         int len = (int)src.measureText(newText);
         int w = canvas.getWidth();
-        int x = (w - len)/2 - (int)m_padding + 10 ;
+        int x = (w - len - (int)m_padding)/2 - 20 ;
         canvas.drawText(newText,x,i3,src);
     }
 
@@ -38,11 +36,11 @@ public class PPNovelTitleCenterBoldSpan extends ReplacementSpan {
         return paint;
     }
 
-    private String autoChangeTextByCanvasWidth(final String text, Paint paint, Canvas canvas){
+    private String autoChangeTextByCanvasWidth(final String text, Paint paint, int canvasLen){
         String tx = text.replaceAll("\n", "");
         float len = paint.measureText(tx);
         float tailLen = paint.measureText("…");
-        float w = canvas.getWidth() - 20 - m_padding;
+        float w = canvasLen - 40 - m_padding;
         if(len <= w){
             return tx;
         }

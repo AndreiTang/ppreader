@@ -1,10 +1,6 @@
 package org.andrei.ppreader.ui;
 
-import android.app.Activity;
 import android.graphics.Paint;
-import android.os.Build;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.TextView;
 
 public class Utils {

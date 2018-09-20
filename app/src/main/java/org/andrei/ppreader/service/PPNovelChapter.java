@@ -5,7 +5,7 @@ package org.andrei.ppreader.service;
  */
 
 public class PPNovelChapter {
-    public String url;
-    public String text;
-    public String name;
+    public String url="";
+    public String text="";
+    public String name="";
 }
