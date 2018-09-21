@@ -14,7 +14,7 @@ public class MockData {
 
         PPNovelChapter chapter = new PPNovelChapter();
         chapter.url = "1";
-        chapter.name = "\n第一章  燃烧的火刑架\n\n";
+        chapter.name = "第一章  燃烧的火刑架abcdefghijklmnopqrstuvwxyz";
         chapter.text =  "浓烟滚滚，每吸一口都发出破烂风箱般粗重的声音，像是在灼烧着咽喉和肺部，夏风的意识很快就模糊起来。\n" +
                 "\n" +
                 "　　“不能，不能睡过去，会死的。”\n" +
@@ -114,12 +114,12 @@ public class MockData {
         novel.chapters.add(chapter);
         chapter = new PPNovelChapter();
         chapter.url="2";
-        chapter.name = "\n第二章  随自己而来的\n\n";
+        chapter.name = "第二章  随自己而来的";
         novel.chapters.add(chapter);
 
         chapter = new PPNovelChapter();
         chapter.url="3";
-        chapter.name = "\n第四章  随自己而来的\n\n";
+        chapter.name = "第四章  随自己而来的";
         novel.chapters.add(chapter);
 
     }

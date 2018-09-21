@@ -11,7 +11,6 @@ public class PPNovelMainAdapter extends FragmentPagerAdapter {
 
     public PPNovelMainAdapter(FragmentManager fm) {
         super(fm);
-
     }
 
     @Override

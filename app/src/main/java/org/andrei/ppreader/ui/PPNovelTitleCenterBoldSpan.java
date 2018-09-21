@@ -23,9 +23,9 @@ public class PPNovelTitleCenterBoldSpan extends ReplacementSpan {
         Paint src = getTitlePaint(paint);
         String text = charSequence.subSequence(i, i1).toString();
         String newText = autoChangeTextByCanvasWidth(text,src,canvas.getWidth());
-        int len = (int)src.measureText(newText);
-        int w = canvas.getWidth();
-        int x = (w - len - (int)m_padding)/2 - 20 ;
+        float len = src.measureText(newText);
+        float w = canvas.getWidth();
+        float x = (w - m_padding - len)/2 + 15 ;
         canvas.drawText(newText,x,i3,src);
     }
 
@@ -40,7 +40,7 @@ public class PPNovelTitleCenterBoldSpan extends ReplacementSpan {
         String tx = text.replaceAll("\n", "");
         float len = paint.measureText(tx);
         float tailLen = paint.measureText("…");
-        float w = canvasLen - 40 - m_padding;
+        float w = canvasLen - 30 - m_padding;
         if(len <= w){
             return tx;
         }

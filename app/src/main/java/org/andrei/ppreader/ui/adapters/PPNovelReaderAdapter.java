@@ -8,6 +8,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,20 +23,17 @@ import org.andrei.ppreader.service.CrawlNovelService;
 import org.andrei.ppreader.service.CrawlTextResult;
 import org.andrei.ppreader.service.PPNovel;
 import org.andrei.ppreader.service.PPNovelChapter;
+import org.andrei.ppreader.ui.PPNovelLineSpan;
 import org.andrei.ppreader.ui.PPNovelTitleCenterBoldSpan;
+import org.andrei.ppreader.ui.Utils;
 
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
-
-import io.reactivex.Observer;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
-
-import static org.andrei.ppreader.ui.Utils.autoSplitText;
 import static org.andrei.ppreader.ui.Utils.half2full;
 import static org.andrei.ppreader.ui.adapters.PPNovelReaderAdapter.PPNovelTextPage.STATUS_LOADING;
+import static org.andrei.ppreader.ui.adapters.PPNovelReaderAdapter.PPNovelTextPage.STATUS_OK;
 
 public class PPNovelReaderAdapter extends PagerAdapter {
 
@@ -166,98 +164,162 @@ public class PPNovelReaderAdapter extends PagerAdapter {
     }
 
     private void loadText(final PPNovelTextPage page, final TextView tv, final int pos) {
+
         if (page.isSplited) {
             if (page.offset == 0) {
-                setZeroOffsetPageText(tv, page.text);
+                setFirstPageOfChapter(tv, page);
             } else {
-                tv.setText(page.text);
+                setNormalPageOfChapter(tv, page);
             }
         } else {
-            final String text = half2full(page.text);
-            tv.setText(text);
-            tv.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                @Override
-                public void onGlobalLayout() {
-                    tv.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                    reallocateText(tv, text, page.title, pos);
-                }
-            });
+            justifyText(page, tv, pos);
         }
+
     }
 
-    private void reallocateText(final TextView tv, final String text, final String title, final int pos) {
-        String newText = title + autoSplitText(tv, text);
-        setZeroOffsetPageText(tv, newText);
+
+    ///////////////////////////////////
+
+    String adjustParagraph(final String text) {
+        StringBuilder newText = new StringBuilder();
+        String paragraphs[] = half2full(text).replaceAll("\r", "").split("\n");
+        for (String paragraph : paragraphs) {
+            if (paragraph.length() == 0) {
+                continue;
+            }
+            char space = 12288;
+            newText.append(space);
+            newText.append(space);
+            paragraph = paragraph.replaceAll("\\s*", "");
+            newText.append(paragraph);
+            newText.append("\n");
+        }
+        //remove the \n at the end
+        newText.deleteCharAt(newText.length() - 1);
+        return newText.toString();
+    }
+
+    private void justifyText(final PPNovelTextPage page, final TextView tv, final int pos) {
+
+        final StringBuilder text =  new StringBuilder();
+        text.append('\n');
+        //using dummy title to occupy title place which is just one line.
+        // If the real title is length than the width of textview. it will occupy more than 1 line which will cause error.
+        text.append("this is dummy");
+        text.append("\n\n");
+        text.append(adjustParagraph(page.text));
+        tv.setText(text);
         tv.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
                 tv.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                splitText(tv, pos);
+                splitText2Pages(tv, pos);
             }
         });
     }
 
-    private void setZeroOffsetPageText(final TextView tv, final String text) {
-        SpannableString sp = new SpannableString(text);
-        int end = text.indexOf('\n', 1);
-        float fontSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 18, tv.getResources().getDisplayMetrics());
-        float padding = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, tv.getResources().getDisplayMetrics());
-        sp.setSpan(new PPNovelTitleCenterBoldSpan(fontSize, padding), 1, end, 0);
-        tv.setText(sp);
-    }
-
-    private void splitText(TextView tv, int pos) {
-        String text = tv.getText().toString();
-        float height = tv.getHeight();
-        int count = tv.getLineCount();
-        float txtHeight = 0;
-        float endLineBottomMargin = tv.getLineSpacingExtra();
-        int offset = 0;
-        int begin = 0;
+    private void splitText2Pages(final TextView tv, final int pos) {
+        final String text = tv.getText().toString();
+        int pageTextHeight = 0;
         Rect rc = new Rect();
-        String chapter = "";
-        PPNovelTextPage first = null;
-        for (int i = 0; i < count; i++) {
+        ArrayList<String> lines = new ArrayList<String>();
+        PPNovelTextPage page = m_pages.get(pos);
+        PPNovelTextPage firstPage = page;
+        int offset = 0;
+        for (int i = 0; i < tv.getLineCount(); i++) {
             tv.getLineBounds(i, rc);
-            txtHeight += rc.height();
-            if (txtHeight >= height || i == count - 1) {
-                PPNovelTextPage page = null;
-                if (begin == 0) {
-                    //the height of the title should be greater than the normal line, because the title font size is more bigger. But the system thinks they are the sane height, we should -1 ,
-                    // otherwise, the text will be beyond the page
-                    page = m_pages.get(pos);
-                    first = page;
-                    chapter = page.chapter;
-                    i--;
-                } else {
-                    if (txtHeight - endLineBottomMargin > height) {
-                        i--;
-                    }
-                    page = new PPNovelTextPage();
-                    m_pages.add(pos + offset, page);
+            pageTextHeight += rc.height();
+            int begin = tv.getLayout().getLineStart(i);
+            int end = tv.getLayout().getLineEnd(i);
+            String lineText = text.substring(begin, end);
+            if (i == tv.getLineCount() - 1) {
+                if (lineText.indexOf('\n') == -1) {
+                    lineText += '\n';
                 }
-                page.chapter = chapter;
+                lines.add(lineText);
+                page.lines = lines;
                 page.isSplited = true;
                 page.offset = offset;
-                page.status = PPNovelTextPage.STATUS_OK;
-                int end = tv.getLayout().getLineEnd(i);
-                page.text = text.substring(begin, end);
-                if (offset != 0) {
+                page.status = STATUS_OK;
+                page.chapter = firstPage.chapter;
+                m_pages.add(pos + offset, page);
+            } else if (pageTextHeight < tv.getHeight()) {
+                lines.add(lineText);
+
+            } else if (pageTextHeight >= tv.getHeight()) {
+                if (offset == 0) {
+                    i--;
+                }
+                else if ((pageTextHeight - tv.getLineSpacingExtra()) <= tv.getHeight()) {
+                    lines.add(lineText);
+
+                } else {
+                    i--;
+                }
+
+                page.lines = lines;
+                page.isSplited = true;
+                page.offset = offset;
+                page.status = STATUS_OK;
+
+                if (offset > 0) {
+                    page.chapter = firstPage.chapter;
+                    m_pages.add(pos + offset, page);
                     update(pos + offset);
                 }
-                offset++;
-                if (i != count - 1) {
-                    begin = tv.getLayout().getLineStart(i + 1);
-                    txtHeight = 0;
+                else{
+                    page.lines.remove(0);
+                    page.lines.remove(0);
+                    page.lines.remove(0);
                 }
+                offset++;
+                page = new PPNovelTextPage();
+                lines = new ArrayList<String>();
+                pageTextHeight = 0;
             }
         }
-
-        setZeroOffsetPageText(tv, first.text);
+        setFirstPageOfChapter(tv, firstPage);
         m_bNeedUpdate = true;
         this.notifyDataSetChanged();
     }
 
+    private void setFirstPageOfChapter(final TextView tv, final PPNovelTextPage page) {
+        SpannableStringBuilder text = new SpannableStringBuilder();
+        text.append('\n');
+        float fontSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 18, tv.getResources().getDisplayMetrics());
+        float padding = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40, tv.getResources().getDisplayMetrics());
+        SpannableString title = new SpannableString(page.title);
+        title.setSpan(new PPNovelTitleCenterBoldSpan(fontSize, padding), 0, page.title.length(), 0);
+        text.append(title);
+        text.append('\n');
+        text.append('\n');
+        SpannableStringBuilder body = getPageText(page,tv);
+        text.append(body);
+        tv.setText(text);
+    }
+
+    private void setNormalPageOfChapter(final TextView tv, final PPNovelTextPage page) {
+        SpannableStringBuilder body = getPageText(page,tv);
+        tv.setText(body);
+    }
+
+    private SpannableStringBuilder getPageText(PPNovelTextPage page,final TextView tv) {
+        SpannableStringBuilder sb = new SpannableStringBuilder();
+        float fontSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 17, tv.getResources().getDisplayMetrics());
+        float left = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, tv.getResources().getDisplayMetrics());
+        float right = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, tv.getResources().getDisplayMetrics());
+        for (String str : page.lines) {
+            if (str.indexOf('\n') == -1) {
+                SpannableStringBuilder item = new SpannableStringBuilder(str);
+                item.setSpan(new PPNovelLineSpan(fontSize,left,right),0,str.length(),0);
+                sb.append(item);
+                sb.append("\n");
+            } else {
+                sb.append(str);
+            }
+        }
+        return sb;
+    }
 
     private Fragment m_parent;
     private ArrayList<PPNovelTextPage> m_pages = new ArrayList<PPNovelTextPage>();
@@ -278,11 +340,11 @@ public class PPNovelReaderAdapter extends PagerAdapter {
         public String title = "";
         public String chapter = "";
         public int status = STATUS_INIT;
+        public ArrayList<String> lines = new ArrayList<String>();
     }
 
     public interface ClickPPNovelChapter {
         void onClick(String chapter);
     }
-
     ;
 }
