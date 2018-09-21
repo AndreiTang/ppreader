@@ -16,22 +16,12 @@ import android.view.ViewTreeObserver;
 import android.widget.TextView;
 
 import com.jakewharton.rxbinding2.view.RxView;
-
 import org.andrei.ppreader.R;
-import org.andrei.ppreader.service.CrawlNovel;
-import org.andrei.ppreader.service.CrawlNovelService;
-import org.andrei.ppreader.service.CrawlTextResult;
-import org.andrei.ppreader.service.PPNovel;
-import org.andrei.ppreader.service.PPNovelChapter;
 import org.andrei.ppreader.ui.PPNovelLineSpan;
 import org.andrei.ppreader.ui.PPNovelTitleCenterBoldSpan;
-import org.andrei.ppreader.ui.Utils;
-
-
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import io.reactivex.functions.Consumer;
-import static org.andrei.ppreader.ui.Utils.half2full;
 import static org.andrei.ppreader.ui.adapters.PPNovelReaderAdapter.PPNovelTextPage.STATUS_LOADING;
 import static org.andrei.ppreader.ui.adapters.PPNovelReaderAdapter.PPNovelTextPage.STATUS_OK;
 
@@ -182,7 +172,7 @@ public class PPNovelReaderAdapter extends PagerAdapter {
 
     String adjustParagraph(final String text) {
         StringBuilder newText = new StringBuilder();
-        String paragraphs[] = half2full(text).replaceAll("\r", "").split("\n");
+        String paragraphs[] = text.replaceAll("\r", "").split("\n");
         for (String paragraph : paragraphs) {
             if (paragraph.length() == 0) {
                 continue;
@@ -232,31 +222,25 @@ public class PPNovelReaderAdapter extends PagerAdapter {
             int begin = tv.getLayout().getLineStart(i);
             int end = tv.getLayout().getLineEnd(i);
             String lineText = text.substring(begin, end);
-            if (i == tv.getLineCount() - 1) {
-                if (lineText.indexOf('\n') == -1) {
-                    lineText += '\n';
-                }
-                lines.add(lineText);
-                page.lines = lines;
-                page.isSplited = true;
-                page.offset = offset;
-                page.status = STATUS_OK;
-                page.chapter = firstPage.chapter;
-                m_pages.add(pos + offset, page);
-            } else if (pageTextHeight < tv.getHeight()) {
-                lines.add(lineText);
-
-            } else if (pageTextHeight >= tv.getHeight()) {
-                if (offset == 0) {
-                    i--;
-                }
-                else if ((pageTextHeight - tv.getLineSpacingExtra()) <= tv.getHeight()) {
+            if (pageTextHeight < tv.getHeight()) {
+                if (i == tv.getLineCount() - 1) {
+                    if (lineText.indexOf('\n') == -1) {
+                        lineText += '\n';
+                    }
                     lines.add(lineText);
-
-                } else {
-                    i--;
+                    page.lines = lines;
+                    page.isSplited = true;
+                    page.offset = offset;
+                    page.status = STATUS_OK;
+                    page.chapter = firstPage.chapter;
+                    m_pages.add(pos + offset, page);
+                }
+                else{
+                    lines.add(lineText);
                 }
 
+            } else {
+                i--;
                 page.lines = lines;
                 page.isSplited = true;
                 page.offset = offset;
@@ -268,6 +252,7 @@ public class PPNovelReaderAdapter extends PagerAdapter {
                     update(pos + offset);
                 }
                 else{
+                    //remove the title. it will use PPNovelTitleCenterBoldSpan, instead of PPNovelLineSpan.
                     page.lines.remove(0);
                     page.lines.remove(0);
                     page.lines.remove(0);
