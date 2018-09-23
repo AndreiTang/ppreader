@@ -25,7 +25,7 @@ public class PPNovel {
     public boolean needRemove = false;
     public int type = TYPE_ING;
     public int currentChapterIndex= 0;
-    public int getCurrentChapterOffset = 0;
+    public int currentChapterOffset = 0;
 
     public PPNovelChapter getPPNovelChapter(String chapterUrl){
         for(PPNovelChapter chapter : chapters){
@@ -34,6 +34,16 @@ public class PPNovel {
             }
         }
         return null;
+    }
+
+    public int getPPNovelPosition(String chapterUrl){
+        for(int i = 0 ; i < chapters.size() ; i++){
+            PPNovelChapter chapter = chapters.get(i);
+            if(chapter.url.compareTo(chapterUrl) == 0){
+                return i;
+            }
+        }
+        return -1;
     }
 
 }

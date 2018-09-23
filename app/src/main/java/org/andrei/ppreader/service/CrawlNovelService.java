@@ -30,6 +30,7 @@ public class CrawlNovelService {
         return crawlNovel;
     }
 
+
     public  ArrayList<PPNovel> getPPNovels(){
         return m_novels;
     }

@@ -1,34 +1,35 @@
 package org.andrei.ppreader.ui.adapters;
 
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Rect;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.PagerAdapter;
-import android.support.v4.view.ViewPager;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.TextView;
 
 import com.jakewharton.rxbinding2.view.RxView;
+
 import org.andrei.ppreader.R;
 import org.andrei.ppreader.ui.PPNovelLineSpan;
 import org.andrei.ppreader.ui.PPNovelTitleCenterBoldSpan;
+
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
+
 import io.reactivex.functions.Consumer;
+
 import static org.andrei.ppreader.ui.adapters.PPNovelReaderAdapter.PPNovelTextPage.STATUS_LOADING;
 import static org.andrei.ppreader.ui.adapters.PPNovelReaderAdapter.PPNovelTextPage.STATUS_OK;
 
 public class PPNovelReaderAdapter extends PagerAdapter {
 
 
-    public PPNovelReaderAdapter(Fragment parent, ClickPPNovelChapter callback) {
+    public PPNovelReaderAdapter(@NonNull Fragment parent, @NonNull ClickPPNovelChapter callback) {
         m_parent = parent;
         m_callback = callback;
     }
@@ -60,7 +61,7 @@ public class PPNovelReaderAdapter extends PagerAdapter {
             @Override
             public void accept(Object o) throws Exception {
                 String chapter = (String) v.getTag(R.id.tag_chapter);
-                PPNovelTextPage page = getItemByChapter(chapter);
+                PPNovelTextPage page = getFirstItemByChapter(chapter);
                 page.status = STATUS_LOADING;
                 update(position);
                 if (m_callback != null) {
@@ -95,7 +96,7 @@ public class PPNovelReaderAdapter extends PagerAdapter {
         return m_pages.get(pos);
     }
 
-    public PPNovelTextPage getItemByChapter(String chapterUrl) {
+    public PPNovelTextPage getFirstItemByChapter(String chapterUrl) {
         for (PPNovelTextPage page : m_pages) {
             if (page.chapter.compareTo(chapterUrl) == 0) {
                 return page;
@@ -104,7 +105,7 @@ public class PPNovelReaderAdapter extends PagerAdapter {
         return null;
     }
 
-    public int getItemPositionByChapter(String chapterUrl) {
+    public int getFirstItemPositionByChapter(String chapterUrl) {
         for (int i = 0; i < m_pages.size(); i++) {
             PPNovelTextPage page = m_pages.get(i);
             if (page.chapter.compareTo(chapterUrl) == 0) {
@@ -128,6 +129,10 @@ public class PPNovelReaderAdapter extends PagerAdapter {
                 return;
             }
         }
+    }
+
+    public void setTextViewHeight(int tvHeight){
+        m_tvHeight = tvHeight;
     }
 
 
@@ -154,23 +159,14 @@ public class PPNovelReaderAdapter extends PagerAdapter {
     }
 
     private void loadText(final PPNovelTextPage page, final TextView tv, final int pos) {
-
         if (page.isSplited) {
-            if (page.offset == 0) {
-                setFirstPageOfChapter(tv, page);
-            } else {
-                setNormalPageOfChapter(tv, page);
-            }
+           loadPage(page,tv);
         } else {
-            justifyText(page, tv, pos);
+            segmentationText(page, tv, pos);
         }
-
     }
 
-
-    ///////////////////////////////////
-
-    String adjustParagraph(final String text) {
+    private String adjustParagraph(final String text) {
         StringBuilder newText = new StringBuilder();
         String paragraphs[] = text.replaceAll("\r", "").split("\n");
         for (String paragraph : paragraphs) {
@@ -189,86 +185,151 @@ public class PPNovelReaderAdapter extends PagerAdapter {
         return newText.toString();
     }
 
-    private void justifyText(final PPNovelTextPage page, final TextView tv, final int pos) {
+    private void segmentationText(final PPNovelTextPage page, final TextView tv, final int pos) {
 
         final StringBuilder text =  new StringBuilder();
-        text.append('\n');
+        text.append("J\n");
         //using dummy title to occupy title place which is just one line.
         // If the real title is length than the width of textview. it will occupy more than 1 line which will cause error.
-        text.append("this is dummy");
-        text.append("\n\n");
+        text.append("This is dummy\n");
+        text.append("J\n");
         text.append(adjustParagraph(page.text));
         tv.setText(text);
+
         tv.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
                 tv.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                splitText2Pages(tv, pos);
+                splitText(tv, pos);
             }
         });
     }
 
-    private void splitText2Pages(final TextView tv, final int pos) {
+    private void splitText(final TextView tv, final int pos) {
         final String text = tv.getText().toString();
         int pageTextHeight = 0;
-        Rect rc = new Rect();
-        ArrayList<String> lines = new ArrayList<String>();
+        int lineHeight = tv.getLineHeight();
+        int lineCount = tv.getLineCount();
+        float lineSpace = tv.getLineSpacingExtra();
         PPNovelTextPage page = m_pages.get(pos);
+        int beginPos = getFirstItemPositionByChapter(page.chapter);
+        page = m_pages.get(beginPos);
         PPNovelTextPage firstPage = page;
         int offset = 0;
-        for (int i = 0; i < tv.getLineCount(); i++) {
-            tv.getLineBounds(i, rc);
-            pageTextHeight += rc.height();
+
+        for (int i = 0; i < lineCount; i++) {
             int begin = tv.getLayout().getLineStart(i);
             int end = tv.getLayout().getLineEnd(i);
             String lineText = text.substring(begin, end);
-            if (pageTextHeight < tv.getHeight()) {
-                if (i == tv.getLineCount() - 1) {
+            pageTextHeight +=lineHeight;
+
+            if (pageTextHeight <m_tvHeight) {
+                if (i == lineCount - 1) {
                     if (lineText.indexOf('\n') == -1) {
                         lineText += '\n';
                     }
-                    lines.add(lineText);
-                    page.lines = lines;
+                    page.lines.add(lineText);
+                    //page.lines = lines;
                     page.isSplited = true;
                     page.offset = offset;
                     page.status = STATUS_OK;
                     page.chapter = firstPage.chapter;
-                    m_pages.add(pos + offset, page);
+
+                    if(page.offset > 0){
+                        page.gravity = Gravity.TOP;
+                    }
+                    else{
+                        //remove the title. it will use PPNovelTitleCenterBoldSpan, instead of PPNovelLineSpan.
+                        page.lines.remove(0);
+                        page.lines.remove(0);
+                        page.lines.remove(0);
+                        page.gravity = Gravity.BOTTOM;
+                    }
+                    update(beginPos+offset);
+                    break;
                 }
                 else{
-                    lines.add(lineText);
+                    page.lines.add(lineText);
                 }
 
-            } else {
-                i--;
-                page.lines = lines;
+            }
+            else {
+                if(pageTextHeight - lineSpace <= m_tvHeight){
+                    if(i == lineCount - 1){
+                        if (lineText.indexOf('\n') == -1) {
+                            lineText += '\n';
+                        }
+                    }
+                    page.lines.add(lineText);
+                }
+                else{
+                    i--;
+                }
+
                 page.isSplited = true;
                 page.offset = offset;
                 page.status = STATUS_OK;
 
-                if (offset > 0) {
-                    page.chapter = firstPage.chapter;
-                    m_pages.add(pos + offset, page);
-                    update(pos + offset);
-                }
-                else{
+                if (offset == 0) {
                     //remove the title. it will use PPNovelTitleCenterBoldSpan, instead of PPNovelLineSpan.
                     page.lines.remove(0);
                     page.lines.remove(0);
                     page.lines.remove(0);
+                    //remove the last line. becuase the font of title is higher than line's
+                    page.lines.remove(page.lines.size()-1);
+                    i--;
+                    page.gravity = Gravity.BOTTOM;
+                }
+                else{
+
+                    page.chapter = firstPage.chapter;
+                    if(i == lineCount - 1){
+                        page.gravity = Gravity.TOP;
+                    }
+                    else{
+                        page.gravity = Gravity.CENTER_VERTICAL;
+                    }
+                }
+                if(beginPos + offset != pos)
+                    update(beginPos + offset);
+                if(i == lineCount - 1){
+                    break;
                 }
                 offset++;
-                page = new PPNovelTextPage();
-                lines = new ArrayList<String>();
+                page = getPage(firstPage.chapter,offset);
+                if(page == null){
+                    page = new PPNovelTextPage();
+                    m_pages.add(beginPos+offset,page);
+                    this.notifyDataSetChanged();
+                }
                 pageTextHeight = 0;
+
             }
         }
-        setFirstPageOfChapter(tv, firstPage);
+        page = m_pages.get(pos);
+        loadPage(page,tv);
         m_bNeedUpdate = true;
-        this.notifyDataSetChanged();
+        notifyDataSetChanged();
     }
 
-    private void setFirstPageOfChapter(final TextView tv, final PPNovelTextPage page) {
+    private PPNovelTextPage getPage(final String chapter, final int offset){
+        for(PPNovelTextPage page : m_pages){
+            if(page.chapter.compareTo(chapter) == 0 && page.offset == offset){
+                return page;
+            }
+        }
+        return null;
+    }
+
+    private void loadPage(final PPNovelTextPage page, final TextView tv){
+        if (page.offset == 0) {
+            loadFirstPage(tv, page);
+        } else {
+            loadNormalPage(tv, page);
+        }
+    }
+
+    private void loadFirstPage(final TextView tv, final PPNovelTextPage page) {
         SpannableStringBuilder text = new SpannableStringBuilder();
         text.append('\n');
         float fontSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 18, tv.getResources().getDisplayMetrics());
@@ -281,11 +342,13 @@ public class PPNovelReaderAdapter extends PagerAdapter {
         SpannableStringBuilder body = getPageText(page,tv);
         text.append(body);
         tv.setText(text);
+        tv.setGravity(page.gravity);
     }
 
-    private void setNormalPageOfChapter(final TextView tv, final PPNovelTextPage page) {
+    private void loadNormalPage(final TextView tv, final PPNovelTextPage page) {
         SpannableStringBuilder body = getPageText(page,tv);
         tv.setText(body);
+        tv.setGravity(page.gravity);
     }
 
     private SpannableStringBuilder getPageText(PPNovelTextPage page,final TextView tv) {
@@ -293,13 +356,19 @@ public class PPNovelReaderAdapter extends PagerAdapter {
         float fontSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 17, tv.getResources().getDisplayMetrics());
         float left = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, tv.getResources().getDisplayMetrics());
         float right = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, tv.getResources().getDisplayMetrics());
-        for (String str : page.lines) {
+        for (int i = 0; i < page.lines.size() ; i++) {
+            String str = page.lines.get(i);
             if (str.indexOf('\n') == -1) {
                 SpannableStringBuilder item = new SpannableStringBuilder(str);
                 item.setSpan(new PPNovelLineSpan(fontSize,left,right),0,str.length(),0);
                 sb.append(item);
-                sb.append("\n");
+                if(i != page.lines.size() - 1){
+                    sb.append("\n");
+                }
             } else {
+                if( i == page.lines.size() -1){
+                    str = str.replaceAll("\n","");
+;                }
                 sb.append(str);
             }
         }
@@ -311,6 +380,7 @@ public class PPNovelReaderAdapter extends PagerAdapter {
     private boolean m_bNeedUpdate = false;
     private ClickPPNovelChapter m_callback = null;
     private ArrayList<View> m_views = new ArrayList<View>();
+    private int m_tvHeight = 0;
 
     static public class PPNovelTextPage {
 
@@ -319,6 +389,7 @@ public class PPNovelReaderAdapter extends PagerAdapter {
         public final static int STATUS_FAIL = 2;
         public final static int STATUS_INIT = 3;
 
+        public float lineSpace =0;
         public String text = "";
         public int offset = 0;
         public boolean isSplited = false;
@@ -326,6 +397,7 @@ public class PPNovelReaderAdapter extends PagerAdapter {
         public String chapter = "";
         public int status = STATUS_INIT;
         public ArrayList<String> lines = new ArrayList<String>();
+        int gravity = Gravity.BOTTOM ;
     }
 
     public interface ClickPPNovelChapter {
