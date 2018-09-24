@@ -27,6 +27,8 @@ import org.andrei.ppreader.service.PPNovel;
 import org.andrei.ppreader.service.PPNovelChapter;
 import org.andrei.ppreader.ui.PPNovelRxBinding;
 import org.andrei.ppreader.ui.adapters.PPNovelReaderAdapter;
+import org.andrei.ppreader.ui.helper.PPNovelReaderPageManager;
+import org.andrei.ppreader.ui.helper.PPNovelTextPage;
 
 import java.util.ArrayList;
 
@@ -86,65 +88,23 @@ public class PPNovelReaderFragment extends Fragment implements PPNovelReaderAdap
 
         final ViewPager vp = (ViewPager) getView().findViewById(R.id.novel_reader_pager);
         final PPNovelReaderAdapter adapter = new PPNovelReaderAdapter(this, this);
-        if (m_novel != null) {
-            for (int i = 0; i < m_novel.chapters.size(); i++) {
-                PPNovelChapter chapter = m_novel.chapters.get(i);
-                PPNovelReaderAdapter.PPNovelTextPage page = new PPNovelReaderAdapter.PPNovelTextPage();
-                page.chapter = chapter.url;
-                page.title = chapter.name;
-                page.text = chapter.text;
-                if (page.text.length() > 0) {
-                    page.status = PPNovelReaderAdapter.PPNovelTextPage.STATUS_LOADING;
-                } else {
-                    page.status = PPNovelReaderAdapter.PPNovelTextPage.STATUS_INIT;
-                }
-                adapter.addPage(page, false);
-                if (i == m_novel.currentChapterIndex && page.text.length() > 0 && m_novel.currentChapterOffset > 0) {
-                    for (int j = 1; j <= m_novel.currentChapterOffset; j++) {
-                        PPNovelReaderAdapter.PPNovelTextPage pp = new PPNovelReaderAdapter.PPNovelTextPage();
-                        pp.offset = j;
-                        pp.chapter = page.chapter;
-                        pp.isSplited = false;
-                        pp.status = PPNovelReaderAdapter.PPNovelTextPage.STATUS_LOADING;
-                        if(j ==  m_novel.currentChapterOffset){
-                            pp.text = page.text;
-                        }
-                        adapter.addPage(pp, false);
-                    }
-                }
-            }
-
-            //if the current index is beyond the array, reset all to be 0.
-            if (m_novel.currentChapterIndex >= m_novel.chapters.size()) {
-                m_novel.currentChapterIndex = 0;
-                m_novel.currentChapterOffset = 0;
-            } else {
-                PPNovelChapter chapter = m_novel.chapters.get(m_novel.currentChapterIndex);
-                //it mean this text isn't downloaded. its offset must be 0.
-                if (chapter.text.length() == 0) {
-                    m_novel.currentChapterOffset = 0;
-                }
-            }
-
-        }
 
         PPNovelRxBinding.pageSelected(vp).subscribe(new Consumer<Integer>() {
             @Override
             public void accept(Integer position) throws Exception {
-                PPNovelReaderAdapter.PPNovelTextPage item = adapter.getItem(position);
+                PPNovelTextPage item = m_pageMgr.getItem(position)
                 PPNovelChapter chapter = m_novel.getPPNovelChapter(item.chapter);
                 assert (chapter != null);
-                if (item.status == PPNovelReaderAdapter.PPNovelTextPage.STATUS_INIT) {
-                    item.status = PPNovelReaderAdapter.PPNovelTextPage.STATUS_LOADING;
+                if (item.status == PPNovelTextPage.STATUS_INIT) {
+                    item.status = PPNovelTextPage.STATUS_LOADING;
                     fetchChapterText(chapter);
-                } else if (item.status == PPNovelReaderAdapter.PPNovelTextPage.STATUS_LOADING && chapter.text.length() > 0) {
+                } else if (item.status == PPNovelTextPage.STATUS_LOADED) {
                     item.text = chapter.text;
-                    item.status = PPNovelReaderAdapter.PPNovelTextPage.STATUS_OK;
+                    item.status = PPNovelTextPage.STATUS_OK;
                     adapter.update(position);
                 } else {
                     adapter.update(position);
                 }
-
                 showChapterInfo(chapter);
             }
         });
@@ -296,6 +256,7 @@ public class PPNovelReaderFragment extends Fragment implements PPNovelReaderAdap
     private PPNovel m_novel;
     private ArrayList<PPNovelChapter> m_fetchList = new ArrayList<PPNovelChapter>();
     private boolean m_bRunning = false;
+    private PPNovelReaderPageManager m_pageMgr = null;
 
 
 }

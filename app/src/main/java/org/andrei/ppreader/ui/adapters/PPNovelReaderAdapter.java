@@ -15,6 +15,7 @@ import android.widget.TextView;
 import com.jakewharton.rxbinding2.view.RxView;
 
 import org.andrei.ppreader.R;
+import org.andrei.ppreader.service.PPNovel;
 import org.andrei.ppreader.ui.PPNovelLineSpan;
 import org.andrei.ppreader.ui.PPNovelTitleCenterBoldSpan;
 
@@ -173,14 +174,19 @@ public class PPNovelReaderAdapter extends PagerAdapter {
             if (paragraph.length() == 0) {
                 continue;
             }
+            //there are two space at the beginning of each paragraph.
             char space = 12288;
             newText.append(space);
             newText.append(space);
+
+            //Except the beginning, all the space are removed
             paragraph = paragraph.replaceAll("\\s*", "");
             newText.append(paragraph);
+
+            //there is a '\n' at the end of each line
             newText.append("\n");
         }
-        //remove the \n at the end
+        //remove the '\n' at the end. Or textview will a new empty.
         newText.deleteCharAt(newText.length() - 1);
         return newText.toString();
     }
@@ -206,16 +212,18 @@ public class PPNovelReaderAdapter extends PagerAdapter {
     }
 
     private void splitText(final TextView tv, final int pos) {
-        final String text = tv.getText().toString();
         int pageTextHeight = 0;
+        int offset = 0;
+        ArrayList<PPNovelTextPage> pages = new ArrayList<PPNovelTextPage>();
+        final String text = tv.getText().toString();
         int lineHeight = tv.getLineHeight();
         int lineCount = tv.getLineCount();
         float lineSpace = tv.getLineSpacingExtra();
+
         PPNovelTextPage page = m_pages.get(pos);
         int beginPos = getFirstItemPositionByChapter(page.chapter);
         page = m_pages.get(beginPos);
         PPNovelTextPage firstPage = page;
-        int offset = 0;
 
         for (int i = 0; i < lineCount; i++) {
             int begin = tv.getLayout().getLineStart(i);
@@ -224,90 +232,80 @@ public class PPNovelReaderAdapter extends PagerAdapter {
             pageTextHeight +=lineHeight;
 
             if (pageTextHeight <m_tvHeight) {
-                if (i == lineCount - 1) {
-                    if (lineText.indexOf('\n') == -1) {
-                        lineText += '\n';
-                    }
-                    page.lines.add(lineText);
-                    //page.lines = lines;
-                    page.isSplited = true;
-                    page.offset = offset;
-                    page.status = STATUS_OK;
-                    page.chapter = firstPage.chapter;
-
-                    if(page.offset > 0){
-                        page.gravity = Gravity.TOP;
-                    }
-                    else{
-                        //remove the title. it will use PPNovelTitleCenterBoldSpan, instead of PPNovelLineSpan.
-                        page.lines.remove(0);
-                        page.lines.remove(0);
-                        page.lines.remove(0);
-                        page.gravity = Gravity.BOTTOM;
-                    }
-                    update(beginPos+offset);
-                    break;
-                }
-                else{
-                    page.lines.add(lineText);
-                }
-
+                page.lines.add(lineText);
             }
             else {
                 if(pageTextHeight - lineSpace <= m_tvHeight){
-                    if(i == lineCount - 1){
-                        if (lineText.indexOf('\n') == -1) {
-                            lineText += '\n';
-                        }
-                    }
                     page.lines.add(lineText);
                 }
                 else{
                     i--;
                 }
 
-                page.isSplited = true;
-                page.offset = offset;
-                page.status = STATUS_OK;
-
+                //the the font size of title is bigger than lines in body. So the line size in body decrease 1
                 if (offset == 0) {
-                    //remove the title. it will use PPNovelTitleCenterBoldSpan, instead of PPNovelLineSpan.
-                    page.lines.remove(0);
-                    page.lines.remove(0);
-                    page.lines.remove(0);
-                    //remove the last line. becuase the font of title is higher than line's
-                    page.lines.remove(page.lines.size()-1);
                     i--;
-                    page.gravity = Gravity.BOTTOM;
                 }
-                else{
 
-                    page.chapter = firstPage.chapter;
-                    if(i == lineCount - 1){
-                        page.gravity = Gravity.TOP;
+                if(i != lineCount - 1){
+                    offset++;
+                    page = getPage(firstPage.chapter,offset);
+                    if(page == null){
+                        page = new PPNovelTextPage();
+                        page.offset = offset;
+                        pages.add(page);
                     }
-                    else{
-                        page.gravity = Gravity.CENTER_VERTICAL;
-                    }
+                    pageTextHeight = 0;
                 }
-                if(beginPos + offset != pos)
-                    update(beginPos + offset);
-                if(i == lineCount - 1){
-                    break;
-                }
-                offset++;
-                page = getPage(firstPage.chapter,offset);
-                if(page == null){
-                    page = new PPNovelTextPage();
-                    m_pages.add(beginPos+offset,page);
-                    this.notifyDataSetChanged();
-                }
-                pageTextHeight = 0;
-
             }
         }
-        page = m_pages.get(pos);
-        loadPage(page,tv);
+
+        for(PPNovelTextPage pp  : pages){
+            m_pages.add(beginPos+pp.offset,pp);
+        }
+
+        for(int i = beginPos ; i <= beginPos+offset; i++){
+            PPNovelTextPage pp = m_pages.get(i);
+            pp.isSplited = true;
+            pp.status = STATUS_OK;
+            if(i == beginPos){
+                //remove dummy title
+                pp.lines.remove(0);
+                pp.lines.remove(0);
+                pp.lines.remove(0);
+                //remove the decreased line, due to the title size.
+                if(offset > 0){
+                    pp.lines.remove(pp.lines.size()-1);
+                }
+                pp.gravity = Gravity.BOTTOM;
+            }
+            else if(i == beginPos + offset){
+                pp.chapter = firstPage.chapter;
+                pp.gravity = Gravity.TOP;
+
+                //add '\n' at end of the last line of last page in each chapter.
+                //it mean this line doesn't change the letter space.
+                String lastLine = pp.lines.get(pp.lines.size()-1);
+                if(lastLine.indexOf('\n')==-1){
+                    lastLine += "\n";
+                    pp.lines.set(pp.lines.size()-1,lastLine);
+                }
+            }
+            else{
+                pp.chapter = firstPage.chapter;
+                pp.gravity = Gravity.CENTER_VERTICAL;
+            }
+        }
+
+        //validate the ui
+        for(int i = beginPos ; i <= beginPos+offset; i++){
+            if(pos == i){
+                loadPage(m_pages.get(i),tv);
+            }
+            else{
+                update(i);
+            }
+        }
         m_bNeedUpdate = true;
         notifyDataSetChanged();
     }
@@ -362,15 +360,14 @@ public class PPNovelReaderAdapter extends PagerAdapter {
                 SpannableStringBuilder item = new SpannableStringBuilder(str);
                 item.setSpan(new PPNovelLineSpan(fontSize,left,right),0,str.length(),0);
                 sb.append(item);
-                if(i != page.lines.size() - 1){
-                    sb.append("\n");
-                }
+                sb.append("\n");
             } else {
-                if( i == page.lines.size() -1){
-                    str = str.replaceAll("\n","");
-;                }
                 sb.append(str);
             }
+        }
+        //the last line can't be \n  at the end. otherwise, it will add a new empty line.
+        if(sb.charAt(sb.length() - 1) == '\n'){
+            sb.delete(sb.length() - 1,sb.length());
         }
         return sb;
     }
@@ -389,7 +386,7 @@ public class PPNovelReaderAdapter extends PagerAdapter {
         public final static int STATUS_FAIL = 2;
         public final static int STATUS_INIT = 3;
 
-        public float lineSpace =0;
+
         public String text = "";
         public int offset = 0;
         public boolean isSplited = false;
