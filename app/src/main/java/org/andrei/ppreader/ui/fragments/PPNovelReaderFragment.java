@@ -68,8 +68,8 @@ public class PPNovelReaderFragment extends Fragment implements PPNovelReaderAdap
         initViewPager(root);
 
         TextClock tmView = (TextClock) getView().findViewById(R.id.novel_reader_time);
-        tmView.setFormat24Hour("hh:mm");
-        tmView.setFormat12Hour("hh:mm");
+        tmView.setFormat24Hour("HH:mm");
+        tmView.setFormat12Hour("hh:mm a");
 
         IntentFilter intentFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
         getActivity().registerReceiver(m_batteryReceiver, intentFilter);
@@ -125,15 +125,6 @@ public class PPNovelReaderFragment extends Fragment implements PPNovelReaderAdap
                     m_novel.currentChapterOffset = 0;
                 }
             }
-
-            //PPNovelReaderAdapter.PPNovelTextPage curr = adapter.getItem(m_novel.currentChapterIndex + m_novel.currentChapterOffset);
-//            if(curr.status == PPNovelReaderAdapter.PPNovelTextPage.STATUS_LOADING){
-//                curr.status = PPNovelReaderAdapter.PPNovelTextPage.STATUS_OK;
-//
-//            }
-//            else{
-//
-//            }
 
         }
 
