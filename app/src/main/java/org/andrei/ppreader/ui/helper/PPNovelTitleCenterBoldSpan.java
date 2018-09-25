@@ -1,4 +1,4 @@
-package org.andrei.ppreader.ui;
+package org.andrei.ppreader.ui.helper;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;

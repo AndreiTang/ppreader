@@ -3,6 +3,7 @@
     <item name="tag_pos" type="id">pos</item>
     <item name="tag_chapter" type="id">chapter</item>
     <item name="tag_status" type="id">status</item>
+    <item name="tag_issplit" type="id">issplit</item>
 
 
     <string name="app_name">爬耙读书</string>

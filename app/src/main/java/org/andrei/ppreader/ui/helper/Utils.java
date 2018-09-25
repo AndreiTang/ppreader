@@ -1,4 +1,4 @@
-package org.andrei.ppreader.ui;
+package org.andrei.ppreader.ui.helper;
 
 import android.graphics.Paint;
 import android.text.Spannable;

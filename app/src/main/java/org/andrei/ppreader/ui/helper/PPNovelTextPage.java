@@ -11,8 +11,6 @@ public class PPNovelTextPage {
     public final static int STATUS_FAIL = 3;
     public final static int STATUS_INIT = 4;
 
-
-
     public String text = "";
     public int offset = 0;
     public boolean isSplit = false;
@@ -20,5 +18,5 @@ public class PPNovelTextPage {
     public String chapter = "";
     public int status = STATUS_INIT;
     public ArrayList<String> lines = new ArrayList<String>();
-    int gravity = Gravity.BOTTOM ;
+    public int gravity = Gravity.BOTTOM ;
 }

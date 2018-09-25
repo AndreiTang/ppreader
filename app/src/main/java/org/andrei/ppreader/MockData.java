@@ -11,8 +11,8 @@ public class MockData {
         novel.imgUrl = "https://fm.88dus.com/38/38089/38089s.jpg";
         novel.name = "奥术神座";
         novel.chapterUrl = "11";
-        novel.currentChapterOffset = 2;
-        novel.currentChapterIndex = 1;
+        novel.currentChapterOffset = 0;
+        novel.currentChapterIndex = 0;
 
         PPNovelChapter chapter = new PPNovelChapter();
         chapter.url = "1";
