@@ -27,5 +27,9 @@
     <string name="err_network">主人，网络挂了...</string>
     <string name="novel_reader_loading">主人，正在搬运中...</string>
     <string name="novel_reader_err_msg">主人，再戮我一下...</string>
+    <string name="novel_panel_list">书架</string>
+    <string name="novel_panel_cache">缓存</string>
+    <string name="novel_panel_dict">目录</string>
+    <string name="novel_panel_search">搜索</string>
 
 </resources>

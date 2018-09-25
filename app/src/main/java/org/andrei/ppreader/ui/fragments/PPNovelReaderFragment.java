@@ -10,7 +10,9 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
 import android.util.DisplayMetrics;
+import android.view.GestureDetector;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -18,23 +20,31 @@ import android.widget.ImageView;
 import android.widget.TextClock;
 import android.widget.TextView;
 
+import com.jakewharton.rxbinding2.view.RxView;
+
 import org.andrei.ppreader.R;
 import org.andrei.ppreader.service.CrawlNovelThrowable;
 import org.andrei.ppreader.service.PPNovel;
 import org.andrei.ppreader.service.PPNovelChapter;
-import org.andrei.ppreader.ui.helper.PPNovelRxBinding;
 import org.andrei.ppreader.ui.adapters.PPNovelReaderAdapter;
 import org.andrei.ppreader.ui.helper.PPNovelReaderPageManager;
+import org.andrei.ppreader.ui.helper.PPNovelRxBinding;
 import org.andrei.ppreader.ui.helper.PPNovelTextPage;
+import org.andrei.ppreader.ui.views.PPNovelReaderControlPanel;
 
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import io.reactivex.Observable;
 import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 
 /**
  * A simple {@link Fragment} subclass.
  */
-public class PPNovelReaderFragment extends Fragment  {
+public class PPNovelReaderFragment extends Fragment {
 
 
     public PPNovelReaderFragment() {
@@ -82,8 +92,76 @@ public class PPNovelReaderFragment extends Fragment  {
         IntentFilter intentFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
         getActivity().registerReceiver(m_batteryReceiver, intentFilter);
 
+        PPNovelReaderControlPanel panel = getView().findViewById(R.id.novel_reader_panel);
+        panel.click().subscribe(new Consumer<Integer>() {
+            @Override
+            public void accept(Integer integer) throws Exception {
+
+            }
+        });
     }
 
+
+    private void initViewPagerTouch(){
+        m_gestureDetector = new GestureDetector(getContext(), new GestureDetector.OnGestureListener() {
+            @Override
+            public boolean onDown(MotionEvent e) {
+                return false;
+            }
+
+            @Override
+            public void onShowPress(MotionEvent e) {
+
+            }
+
+            @Override
+            public boolean onSingleTapUp(MotionEvent e) {
+                return false;
+            }
+
+            @Override
+            public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+                return false;
+            }
+
+            @Override
+            public void onLongPress(MotionEvent e) {
+
+            }
+
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                return false;
+            }
+        });
+
+        m_gestureDetector.setOnDoubleTapListener(new GestureDetector.OnDoubleTapListener() {
+            @Override
+            public boolean onSingleTapConfirmed(MotionEvent e) {
+                return false;
+            }
+
+            @Override
+            public boolean onDoubleTap(MotionEvent e) {
+                PPNovelReaderControlPanel panel = getView().findViewById(R.id.novel_reader_panel);
+                panel.display((int)e.getRawX(),(int)e.getRawY());
+                return false;
+            }
+
+            @Override
+            public boolean onDoubleTapEvent(MotionEvent e) {
+                return false;
+            }
+        });
+
+        getView().findViewById(R.id.novel_reader_pager).setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                m_gestureDetector.onTouchEvent(event);
+                return false;
+            }
+        });
+    }
 
     private void initViewPager(@NonNull final View root) {
         final Fragment parent = this;
@@ -101,8 +179,8 @@ public class PPNovelReaderFragment extends Fragment  {
                 int h1 = getView().findViewById(R.id.novel_action_bar).getMeasuredHeight();
                 int h2 = getView().findViewById(R.id.novel_bottom_bar).getMeasuredHeight();
                 int tvHeight = h - h1 - h2;
-                m_pageMgr = new PPNovelReaderPageManager(m_novel,tvHeight);
-                final PPNovelReaderAdapter adapter = new PPNovelReaderAdapter(parent,m_pageMgr);
+                m_pageMgr = new PPNovelReaderPageManager(m_novel, tvHeight);
+                final PPNovelReaderAdapter adapter = new PPNovelReaderAdapter(parent, m_pageMgr);
 
                 initFetchPPNovelTextCallback();
 
@@ -113,22 +191,23 @@ public class PPNovelReaderFragment extends Fragment  {
                 vp.setCurrentItem(m_novel.currentChapterIndex + m_novel.currentChapterOffset);
             }
         });
+        initViewPagerTouch();
     }
 
-    private void initFetchPPNovelTextCallback(){
+    private void initFetchPPNovelTextCallback() {
 
-        m_pageMgr.getPPNovelTextPageObservable().subscribe(new Observer<Integer>(){
+        m_pageMgr.getPPNovelTextPageObservable().subscribe(new Observer<Integer>() {
 
             @Override
             public void onSubscribe(Disposable d) {
-                
+
             }
 
             @Override
             public void onNext(Integer index) {
                 //if this text is not in the current page, don't immedially set value. Otherwise, the page will incorrectly be shown.For example , 前面的页一刷新，会把现在的页面刷掉
                 final ViewPager vp = (ViewPager) getView().findViewById(R.id.novel_reader_pager);
-                final PPNovelReaderAdapter adapter = (PPNovelReaderAdapter)vp.getAdapter();
+                final PPNovelReaderAdapter adapter = (PPNovelReaderAdapter) vp.getAdapter();
                 int curr = vp.getCurrentItem();
                 if (curr == index) {
                     PPNovelTextPage page = m_pageMgr.getItem(index);
@@ -140,7 +219,7 @@ public class PPNovelReaderFragment extends Fragment  {
             @Override
             public void onError(Throwable e) {
                 final ViewPager vp = (ViewPager) getView().findViewById(R.id.novel_reader_pager);
-                final PPNovelReaderAdapter adapter = (PPNovelReaderAdapter)vp.getAdapter();
+                final PPNovelReaderAdapter adapter = (PPNovelReaderAdapter) vp.getAdapter();
                 CrawlNovelThrowable err = (CrawlNovelThrowable) e;
                 int pos = m_pageMgr.getFirstChapterItemPosition(err.chapterUrl);
                 adapter.update(pos);
@@ -150,12 +229,12 @@ public class PPNovelReaderFragment extends Fragment  {
             public void onComplete() {
 
             }
-        } );
+        });
     }
 
-    private void selectCurrentItem(int position){
+    private void selectCurrentItem(int position) {
         final ViewPager vp = (ViewPager) getView().findViewById(R.id.novel_reader_pager);
-        PPNovelReaderAdapter adapter = (PPNovelReaderAdapter)vp.getAdapter();
+        PPNovelReaderAdapter adapter = (PPNovelReaderAdapter) vp.getAdapter();
         PPNovelTextPage item = m_pageMgr.getItem(position);
         PPNovelChapter chapter = m_novel.getPPNovelChapter(item.chapter);
         assert (item != null);
@@ -222,4 +301,5 @@ public class PPNovelReaderFragment extends Fragment  {
     };
     private PPNovel m_novel;
     private PPNovelReaderPageManager m_pageMgr = null;
+    private GestureDetector m_gestureDetector = null;
 }

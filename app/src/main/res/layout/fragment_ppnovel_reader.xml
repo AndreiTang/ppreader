@@ -7,6 +7,8 @@
     android:background="#DBC49B"
     tools:context=".ui.fragments.PPNovelReaderFragment">
 
+
+
     <LinearLayout
         android:id="@+id/novel_reader"
         android:layout_width="match_parent"
@@ -77,6 +79,12 @@
 
 
     </LinearLayout>
+
+    <org.andrei.ppreader.ui.views.PPNovelReaderControlPanel
+        android:visibility="gone"
+        android:id="@+id/novel_reader_panel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
 
 </FrameLayout>
