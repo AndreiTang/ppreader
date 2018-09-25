@@ -84,11 +84,6 @@ public class PPNovelReaderFragment extends Fragment  {
 
     }
 
-//    @Override
-//    public void onClick(String chapter) {
-//        PPNovelChapter it = m_novel.getPPNovelChapter(chapter);
-//        fetchChapterText(it);
-//    }
 
     private void initViewPager(@NonNull final View root) {
         final Fragment parent = this;
@@ -97,6 +92,8 @@ public class PPNovelReaderFragment extends Fragment  {
         root.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
+                root.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+
                 final ViewPager vp = (ViewPager) getView().findViewById(R.id.novel_reader_pager);
                 root.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                 DisplayMetrics dm = getResources().getDisplayMetrics();
@@ -124,7 +121,7 @@ public class PPNovelReaderFragment extends Fragment  {
 
             @Override
             public void onSubscribe(Disposable d) {
-
+                
             }
 
             @Override
@@ -187,80 +184,6 @@ public class PPNovelReaderFragment extends Fragment  {
         }
     }
 
-//    private void fetchChapterText(PPNovelChapter chapter) {
-//        m_fetchList.add(chapter);
-//        if (!m_bRunning) {
-//            fetchChapterTextProc();
-//        }
-//    }
-//
-//    private void fetchChapterTextProc() {
-//        if (m_crawlNovel == null) {
-//            m_crawlNovel = CrawlNovelService.instance().builder(m_novel.engineIndex);
-//        }
-//        if (m_fetchList.size() == 0) {
-//            return;
-//        }
-//        m_bRunning = true;
-//        PPNovelChapter chapter = m_fetchList.remove(0);
-//        m_crawlNovel.fetchNovelText(m_novel.chapterUrl, chapter.url).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<CrawlTextResult>() {
-//            @Override
-//            public void onSubscribe(Disposable d) {
-//
-//            }
-//
-//            @Override
-//            public void onNext(CrawlTextResult value) {
-//                PPNovelChapter citem = m_novel.getPPNovelChapter(value.chapterUrl);
-//                citem.text = value.text;
-//                ViewPager vp = getView().findViewById(R.id.novel_reader_pager);
-//                PPNovelReaderAdapter adapter = (PPNovelReaderAdapter) vp.getAdapter();
-//                if (adapter == null) {
-//                    return;
-//                }
-//                PPNovelReaderAdapter.PPNovelTextPage page = adapter.getFirstItemByChapter(value.chapterUrl);
-//                assert (page != null);
-//                int index = adapter.getFirstItemPositionByChapter(value.chapterUrl);
-//                int curr = vp.getCurrentItem();
-//                if (curr <= index) {
-//                    page.text = value.text;
-//                    page.status = PPNovelReaderAdapter.PPNovelTextPage.STATUS_OK;
-//                    adapter.update(index);
-//                }
-//
-//                //if this text is not in the current page, don't immedially set value. Otherwise, the page will incorrectly be shown.For example , 前面的页一刷新，会把现在的页面刷掉
-//            }
-//
-//            @Override
-//            public void onError(Throwable e) {
-//                fetchChapterTextProc();
-//                if (m_fetchList.size() == 0) {
-//                    m_bRunning = false;
-//                }
-//
-//                CrawlNovelThrowable err = (CrawlNovelThrowable) e;
-//                ViewPager vp = getView().findViewById(R.id.novel_reader_pager);
-//                PPNovelReaderAdapter adapter = (PPNovelReaderAdapter) vp.getAdapter();
-//                if (adapter == null) {
-//                    return;
-//                }
-//                PPNovelReaderAdapter.PPNovelTextPage page = adapter.getFirstItemByChapter(err.chapterUrl);
-//                assert (page != null);
-//                page.status = PPNovelReaderAdapter.PPNovelTextPage.STATUS_FAIL;
-//                int index = adapter.getFirstItemPositionByChapter(err.chapterUrl);
-//                adapter.update(index);
-//            }
-//
-//            @Override
-//            public void onComplete() {
-//                fetchChapterTextProc();
-//                if (m_fetchList.size() == 0) {
-//                    m_bRunning = false;
-//                }
-//            }
-//        });
-//    }
-
     private int getBatteryId(int per) {
         if (per > 90)
             return R.drawable.battery_100_90;
@@ -299,6 +222,4 @@ public class PPNovelReaderFragment extends Fragment  {
     };
     private PPNovel m_novel;
     private PPNovelReaderPageManager m_pageMgr = null;
-
-
 }

@@ -11,8 +11,8 @@ public class MockData {
         novel.imgUrl = "https://fm.88dus.com/38/38089/38089s.jpg";
         novel.name = "奥术神座";
         novel.chapterUrl = "11";
-        novel.currentChapterOffset = 0;
-        novel.currentChapterIndex = 0;
+        novel.currentChapterOffset = 2;
+        novel.currentChapterIndex = 1;
 
         PPNovelChapter chapter = new PPNovelChapter();
         chapter.url = "1";
@@ -240,6 +240,7 @@ public class MockData {
                 "    自己的脑海里竟然有整个综合图书馆的书籍，它们不像是记忆，而仿佛是投影，一本本分门别类的放好，供路西恩翻阅。\n" +
                 "\n" +
                 "    好奇的路西恩随意地翻阅着图书，可疑惑地发生，绝大部分图书竟然无法打开。";
+        chapter.text="";
         novel.chapters.add(chapter);
 
         chapter = new PPNovelChapter();

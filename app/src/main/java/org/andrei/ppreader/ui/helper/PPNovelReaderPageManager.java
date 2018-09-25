@@ -90,6 +90,7 @@ public class PPNovelReaderPageManager {
                 tv.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
                     @Override
                     public void onGlobalLayout() {
+                        tv.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                         int offset = splitChapter(tv, page);
                         emit.onNext(offset);
                     }

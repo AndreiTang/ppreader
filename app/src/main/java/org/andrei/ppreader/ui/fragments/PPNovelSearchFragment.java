@@ -45,7 +45,7 @@ public class PPNovelSearchFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState){
         super.onActivityCreated(savedInstanceState);
 
-        ListView lv = (ListView) getView().findViewById(R.id.novel_search_ret_list);
+        final ListView lv = (ListView) getView().findViewById(R.id.novel_search_ret_list);
         lv.setFooterDividersEnabled(false);
         lv.setSelected(true);
         lv.setVerticalScrollBarEnabled(false);
@@ -73,6 +73,7 @@ public class PPNovelSearchFragment extends Fragment {
         lv.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
+                lv.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                 insertFootView();
             }
         });
