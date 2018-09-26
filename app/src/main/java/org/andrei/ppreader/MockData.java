@@ -10,6 +10,7 @@ public class MockData {
         novel.engineIndex = 0;
         novel.imgUrl = "https://fm.88dus.com/38/38089/38089s.jpg";
         novel.name = "奥术神座";
+        novel.author = "爱潜水的乌贼";
         novel.chapterUrl = "11";
         novel.currentChapterOffset = 2;
         novel.currentChapterIndex = 1;

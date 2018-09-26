@@ -31,5 +31,12 @@
     <string name="novel_panel_cache">缓存</string>
     <string name="novel_panel_dict">目录</string>
     <string name="novel_panel_search">搜索</string>
+    <string name="novel_dict_prev">上一页</string>
+    <string name="novel_dict_next">下一页</string>
+    <string name="novel_dict_group">目录列表</string>
+    <string name="novel_dict_chapter">第%1$d章-第%2$d章</string>
+    <string name="novel_dict_duration">%1$d小时%2$d分</string>
+
+
 
 </resources>

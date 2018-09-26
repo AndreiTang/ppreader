@@ -17,15 +17,21 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextClock;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.jakewharton.rxbinding2.view.RxView;
 
 import org.andrei.ppreader.R;
 import org.andrei.ppreader.service.CrawlNovelThrowable;
 import org.andrei.ppreader.service.PPNovel;
 import org.andrei.ppreader.service.PPNovelChapter;
+import org.andrei.ppreader.ui.adapters.PPNovelDictAdapter;
+import org.andrei.ppreader.ui.adapters.PPNovelDictGroupAdapter;
 import org.andrei.ppreader.ui.adapters.PPNovelReaderAdapter;
 import org.andrei.ppreader.ui.helper.PPNovelReaderPageManager;
 import org.andrei.ppreader.ui.helper.PPNovelRxBinding;
@@ -95,14 +101,18 @@ public class PPNovelReaderFragment extends Fragment {
         PPNovelReaderControlPanel panel = getView().findViewById(R.id.novel_reader_panel);
         panel.click().subscribe(new Consumer<Integer>() {
             @Override
-            public void accept(Integer integer) throws Exception {
-
+            public void accept(Integer type) throws Exception {
+                if (type == PPNovelReaderControlPanel.DICT) {
+                    getView().findViewById(R.id.novel_reader_dict).setVisibility(View.VISIBLE);
+                }
             }
         });
+
+        initPPNovelDict();
     }
 
 
-    private void initViewPagerTouch(){
+    private void initViewPagerTouch() {
         m_gestureDetector = new GestureDetector(getContext(), new GestureDetector.OnGestureListener() {
             @Override
             public boolean onDown(MotionEvent e) {
@@ -144,7 +154,7 @@ public class PPNovelReaderFragment extends Fragment {
             @Override
             public boolean onDoubleTap(MotionEvent e) {
                 PPNovelReaderControlPanel panel = getView().findViewById(R.id.novel_reader_panel);
-                panel.display((int)e.getRawX(),(int)e.getRawY());
+                panel.display((int) e.getRawX(), (int) e.getRawY());
                 return false;
             }
 
@@ -189,9 +199,123 @@ public class PPNovelReaderFragment extends Fragment {
                 PPNovelChapter chapter = m_novel.chapters.get(m_novel.currentChapterIndex);
                 showChapterInfo(chapter);
                 vp.setCurrentItem(m_novel.currentChapterIndex + m_novel.currentChapterOffset);
+
+                initPPNovelDictAdapter();
+                initPPNovelDictGroupAdapter();
             }
         });
         initViewPagerTouch();
+    }
+
+    private void initPPNovelDict() {
+        final LinearLayout dict = getView().findViewById(R.id.novel_reader_dict);
+        TextView tv = dict.findViewById(R.id.novel_dict_author);
+        tv.setText(m_novel.author);
+        tv = dict.findViewById(R.id.novel_dict_name);
+        tv.setText(m_novel.name);
+        ImageView img = dict.findViewById(R.id.novel_dict_img);
+        Glide.with(dict).clear(img);
+        Glide.with(dict).load(m_novel.imgUrl).apply(RequestOptions.fitCenterTransform()).into(img);
+
+        View v = getView().findViewById(R.id.novel_dict_mask);
+        RxView.clicks(v).throttleFirst(200, TimeUnit.MICROSECONDS).subscribe(new Consumer<Object>() {
+            @Override
+            public void accept(Object obj) throws Exception {
+                dict.setVisibility(View.GONE);
+            }
+        });
+
+        v = getView().findViewById(R.id.novel_dict_group);
+        RxView.clicks(v).throttleFirst(200, TimeUnit.MICROSECONDS).subscribe(new Consumer<Object>() {
+            @Override
+            public void accept(Object obj) throws Exception {
+                View l = dict.findViewById(R.id.novel_dict_list);
+                View g = dict.findViewById(R.id.novel_dict_group_list);
+                if (l.getVisibility() == View.GONE) {
+                    l.setVisibility(View.VISIBLE);
+                    g.setVisibility(View.GONE);
+                } else {
+                    l.setVisibility(View.GONE);
+                    g.setVisibility(View.VISIBLE);
+                }
+
+            }
+        });
+
+        v = getView().findViewById(R.id.novel_dict_prev);
+        RxView.clicks(v).throttleFirst(200, TimeUnit.MICROSECONDS).subscribe(new Consumer<Object>() {
+            @Override
+            public void accept(Object obj) throws Exception {
+                ListView l = dict.findViewById(R.id.novel_dict_list);
+                ListView g = dict.findViewById(R.id.novel_dict_group_list);
+                ListView lv = l;
+                if (g.getVisibility() == View.VISIBLE) {
+                    lv = g;
+                }
+
+                int begin = lv.getFirstVisiblePosition() - 1;
+                int len = lv.getLastVisiblePosition() - lv.getFirstVisiblePosition();
+                begin = begin - len;
+                if (begin >= 0) {
+                    lv.setSelection(begin);
+                }
+                else{
+                    lv.setSelection(0);
+                }
+            }
+        });
+
+        v = getView().findViewById(R.id.novel_dict_next);
+        RxView.clicks(v).throttleFirst(200, TimeUnit.MICROSECONDS).subscribe(new Consumer<Object>() {
+            @Override
+            public void accept(Object obj) throws Exception {
+                ListView l = dict.findViewById(R.id.novel_dict_list);
+                ListView g = dict.findViewById(R.id.novel_dict_group_list);
+                ListView lv = l;
+                if (g.getVisibility() == View.VISIBLE) {
+                    lv = g;
+                }
+                int end = lv.getLastVisiblePosition() + 1 ;
+                if(end <= lv.getChildCount()-1){
+                    lv.setSelection(end);
+                }
+
+            }
+        });
+
+
+    }
+
+    private void initPPNovelDictAdapter() {
+        final LinearLayout dict = getView().findViewById(R.id.novel_reader_dict);
+        ListView lv = (ListView) dict.findViewById(R.id.novel_dict_list);
+        PPNovelDictAdapter adapter = new PPNovelDictAdapter(this, m_novel, m_pageMgr);
+        lv.setAdapter(adapter);
+        adapter.clicks().subscribe(new Consumer<Integer>() {
+            @Override
+            public void accept(Integer pos) throws Exception {
+                final ViewPager vp = (ViewPager) getView().findViewById(R.id.novel_reader_pager);
+                vp.setCurrentItem(pos);
+                dict.setVisibility(View.GONE);
+            }
+        });
+    }
+
+    private void initPPNovelDictGroupAdapter() {
+        final LinearLayout dict = getView().findViewById(R.id.novel_reader_dict);
+        ListView lv = (ListView) dict.findViewById(R.id.novel_dict_group_list);
+        PPNovelDictGroupAdapter adapter = new PPNovelDictGroupAdapter(this, m_novel);
+        lv.setAdapter(adapter);
+        adapter.clicks().subscribe(new Consumer<Integer>() {
+            @Override
+            public void accept(Integer pos) throws Exception {
+                ListView lv = (ListView) dict.findViewById(R.id.novel_dict_list);
+                lv.setSelection(pos);
+                lv.setVisibility(View.VISIBLE);
+                lv = (ListView) dict.findViewById(R.id.novel_dict_group_list);
+                lv.setVisibility(View.GONE);
+            }
+        });
     }
 
     private void initFetchPPNovelTextCallback() {

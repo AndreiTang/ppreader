@@ -87,4 +87,9 @@
         android:layout_height="match_parent" />
 
 
+    <include
+        android:visibility="gone"
+        android:id="@+id/novel_reader_dict"
+        layout="@layout/view_ppnovel_reader_dict" />
+
 </FrameLayout>
