@@ -59,6 +59,10 @@ public class PPNovelReaderFragment extends Fragment {
         // Required empty public constructor
     }
 
+    public PPNovel getNovel() {
+        return m_novel;
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -393,6 +397,8 @@ public class PPNovelReaderFragment extends Fragment {
             adapter.update(position);
         }
         showChapterInfo(chapter);
+        m_novel.currentChapterIndex = m_novel.getPPNovelPosition(chapter.url);
+        m_novel.currentChapterOffset = item.offset;
     }
 
     private void showChapterInfo(PPNovelChapter chapter) {

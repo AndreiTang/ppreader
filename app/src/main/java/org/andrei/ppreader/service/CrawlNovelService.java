@@ -65,6 +65,12 @@ public class CrawlNovelService {
     }
 
     public PPNovel getNovel(String id){
+        for(int  i = 0 ; i <m_novels.size(); i++){
+            PPNovel novel = m_novels.get(i);
+            if(novel.chapterUrl.compareTo(id) == 0){
+                return novel;
+            }
+        }
         return null;
     }
 

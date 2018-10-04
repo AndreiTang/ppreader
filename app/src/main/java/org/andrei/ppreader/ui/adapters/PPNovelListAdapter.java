@@ -2,6 +2,7 @@ package org.andrei.ppreader.ui.adapters;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,6 +21,7 @@ import org.andrei.ppreader.service.CrawlChapterResult;
 import org.andrei.ppreader.service.CrawlNovel;
 import org.andrei.ppreader.service.CrawlNovelService;
 import org.andrei.ppreader.service.PPNovel;
+import org.andrei.ppreader.ui.fragments.PPNovelReaderFragment;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
@@ -141,7 +143,11 @@ public class PPNovelListAdapter extends BaseAdapter{
         if(novel.status == PPNovel.STATUS_CHECKED) {
             novel.status = PPNovel.STATUS_CONFIRMED;
         }
-        this.notifyDataSetChanged();
+        PPNovelReaderFragment fragment = new PPNovelReaderFragment();
+        Bundle arg = new Bundle();
+        arg.putSerializable(PPNovelReaderFragment.NOVEL,novel);
+        fragment.setArguments(arg);
+        m_parent.getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,fragment,PPNovelReaderFragment.TAG).commit();
     }
 
     private void checkNovels(final ArrayList<PPNovel> checkList, final CrawlNovel crawlNovel){

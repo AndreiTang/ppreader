@@ -36,6 +36,7 @@
     <string name="novel_dict_group">目录列表</string>
     <string name="novel_dict_chapter">第%1$d章-第%2$d章</string>
     <string name="novel_dict_duration">%1$d小时%2$d分</string>
+    <string name="novel_list_add_msg">是否要保留%1$s？</string>
 
 
 
