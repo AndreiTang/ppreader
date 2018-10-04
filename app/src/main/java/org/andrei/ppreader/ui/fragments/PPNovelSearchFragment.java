@@ -31,6 +31,8 @@ public class PPNovelSearchFragment extends Fragment {
 
     public PPNovelSearchFragment() {
         // Required empty public constructor
+        m_crawlNovel = CrawlNovelService.instance().builder();
+
     }
 
 
@@ -44,6 +46,7 @@ public class PPNovelSearchFragment extends Fragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+
 
         final ListView lv = (ListView) getView().findViewById(R.id.novel_search_ret_list);
         lv.setFooterDividersEnabled(false);
@@ -69,14 +72,17 @@ public class PPNovelSearchFragment extends Fragment {
             }
         });
 
+    }
 
-        lv.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                //lv.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                insertFootView();
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (m_disposable != null) {
+            if (!m_disposable.isDisposed()) {
+                m_disposable.dispose();
             }
-        });
+            m_disposable = null;
+        }
     }
 
     private void insertFootView() {
@@ -91,18 +97,17 @@ public class PPNovelSearchFragment extends Fragment {
         }
     }
 
-    private PPNovelSearchAdapter getAdapter(){
+    private PPNovelSearchAdapter getAdapter() {
         ListView lv = (ListView) getView().findViewById(R.id.novel_search_ret_list);
         ListAdapter adapter = lv.getAdapter();
-        if(adapter == null){
+        if (adapter == null) {
             return null;
         }
-        if(adapter instanceof  PPNovelSearchAdapter){
-            return (PPNovelSearchAdapter)adapter;
-        }
-        else{
-            HeaderViewListAdapter headerViewListAdapter = (HeaderViewListAdapter)adapter;
-            return (PPNovelSearchAdapter)headerViewListAdapter.getWrappedAdapter();
+        if (adapter instanceof PPNovelSearchAdapter) {
+            return (PPNovelSearchAdapter) adapter;
+        } else {
+            HeaderViewListAdapter headerViewListAdapter = (HeaderViewListAdapter) adapter;
+            return (PPNovelSearchAdapter) headerViewListAdapter.getWrappedAdapter();
         }
     }
 
@@ -123,32 +128,45 @@ public class PPNovelSearchFragment extends Fragment {
 
     private void search(String name) {
         reset();
-        CrawlNovel crawlNovel = CrawlNovelService.instance().builder();
+
         m_isLoading = true;
+
+        if (m_disposable != null) {
+            if (!m_disposable.isDisposed()) {
+                m_disposable.dispose();
+            }
+            m_disposable = null;
+        }
+
         showLoadingMask(true);
-        ListView lv = (ListView) getView().findViewById(R.id.novel_search_ret_list);
+        final ListView lv = (ListView) getView().findViewById(R.id.novel_search_ret_list);
         final PPNovelSearchAdapter adapter = (PPNovelSearchAdapter) getAdapter();
-        crawlNovel.search(name).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<PPNovel>() {
-            @Override
-            public void onSubscribe(Disposable d) {
-
-            }
-
-            @Override
-            public void onNext(PPNovel ppNovel) {
-                //m_searches.add(ppNovel);
-                //notifyDataSetChanged();
-                if (adapter != null) {
-                    adapter.addSearch(ppNovel);
-                }
-                showLoadingMask(false);
-            }
-
+        m_crawlNovel.search(name).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<PPNovel>() {
             @Override
             public void onError(Throwable e) {
                 m_isLoading = false;
                 int err = Integer.valueOf(e.getMessage());
                 showErrorMask(err);
+            }
+
+            @Override
+            public void onSubscribe(Disposable d) {
+                m_disposable = d;
+            }
+
+            @Override
+            public void onNext(PPNovel ppNovel) {
+                if (adapter != null) {
+                    adapter.addSearch(ppNovel);
+                }
+                showLoadingMask(false);
+                lv.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        lv.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                        insertFootView();
+                    }
+                });
             }
 
             @Override
@@ -180,5 +198,7 @@ public class PPNovelSearchFragment extends Fragment {
 
     private View m_footView = null;
     private boolean m_isLoading = false;
+    private CrawlNovel m_crawlNovel = null;
+    private Disposable m_disposable;
 
 }

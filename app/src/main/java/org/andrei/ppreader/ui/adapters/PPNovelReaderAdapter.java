@@ -79,7 +79,6 @@ public class PPNovelReaderAdapter extends PagerAdapter {
         m_views.remove((View) object);
     }
 
-
     public void update(int pos) {
         PPNovelTextPage page = m_pageMgr.getItem(pos);
         if(page == null){
@@ -98,8 +97,6 @@ public class PPNovelReaderAdapter extends PagerAdapter {
             }
         }
     }
-
-
 
     private void updateView(View v, int position) {
         final TextView tv = (TextView) v.findViewById(R.id.novel_reader_text);

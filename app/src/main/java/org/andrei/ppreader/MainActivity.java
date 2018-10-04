@@ -1,10 +1,12 @@
 package org.andrei.ppreader;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.graphics.Color;
 import android.os.Build;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -13,9 +15,29 @@ import android.view.WindowManager;
 
 
 import org.andrei.ppreader.ui.fragments.PPNovelCoverFragment;
+import org.andrei.ppreader.ui.fragments.PPNovelMainFragment;
 import org.andrei.ppreader.ui.fragments.PPNovelReaderFragment;
 
+import java.util.List;
+
 public class MainActivity extends FragmentActivity {
+
+    @Override
+    public void onBackPressed() {
+        List<android.support.v4.app.Fragment> fs  = getSupportFragmentManager().getFragments();
+        int sz = fs.size();
+        // super.onBackPressed();//注释掉这行,back键不退出activity
+        if(this.getSupportFragmentManager().findFragmentByTag(PPNovelMainFragment.TAG) != null){
+            super.onBackPressed();
+        }
+        else if(this.getSupportFragmentManager().findFragmentByTag(PPNovelReaderFragment.TAG) != null){
+            android.support.v4.app.Fragment fragment = new PPNovelMainFragment();
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            transaction.replace(R.id.fragment_container,fragment,PPNovelMainFragment.TAG);
+            transaction.commit();
+        }
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,7 +47,7 @@ public class MainActivity extends FragmentActivity {
             PPNovelCoverFragment fragment = new PPNovelCoverFragment();
             //PPNovelReaderFragment fragment = new PPNovelReaderFragment();
             //fragment.setPPNovel(MockData.novel);
-            getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,fragment).commit();
+            getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,fragment,PPNovelCoverFragment.TAG).commit();
         }
         else{
 

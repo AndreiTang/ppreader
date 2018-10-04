@@ -12,7 +12,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import io.reactivex.Observable;
@@ -20,50 +19,50 @@ import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.schedulers.Schedulers;
 
-public class Crawl88dusNovel implements ICrawlNovel {
+public class CrawlTianYiNovel implements ICrawlNovel {
     @Override
     public Observable<PPNovel> search(final String name) {
         return Observable.create(new ObservableOnSubscribe<PPNovel>() {
             @Override
             public void subscribe(ObservableEmitter<PPNovel> e) throws Exception {
-                try {
-                    String url = "https://so.88dus.com/search/so.php?search_field=0&q=" + "大明";
+                try{
+                    String url = "https://www.tywx.la/searchbook.php?keyword=" + name;
                     Document doc = Jsoup.connect(url).timeout(6000).get();
-                    Elements els = doc.getElementsByClass("ops_cover");
-                    if (els.size() == 0) {
-                        Throwable err = new Throwable(new Integer(R.string.err_not_found).toString());
+                    Elements root = doc.getElementsByAttributeValue("id","alistbox");
+                    if(root == null || root.size() == 0){
+                        Integer i = R.string.err_not_found;
+                        Throwable err = new Throwable(i.toString());
                         e.onError(err);
                         return;
                     }
-                    Elements items = els.get(0).getElementsByClass("block");
-                    if (items.size() == 0) {
-                        Throwable err = new Throwable(new Integer(R.string.err_not_found).toString());
-                        e.onError(err);
-                        return;
-                    }
-
-                    boolean isFetched = false;
-                    for (Element item : items) {
+                    boolean bFetch = false;
+                    for(int i = 0 ; i <root.size(); i++){
+                        Element item = root.get(i);
                         PPNovel novel = new PPNovel();
-                        if (fetchNovel(item, novel)) {
-                            isFetched = true;
+                        boolean bRet = fetchNovel(item,novel);
+                        if(bRet){
+                            bFetch = true;
                             e.onNext(novel);
                         }
                     }
-                    if (!isFetched) {
-                        Throwable err = new Throwable(new Integer(R.string.err_not_found).toString());
+                    if(!bFetch){
+                        Integer i = R.string.err_not_found;
+                        Throwable err = new Throwable(i.toString());
                         e.onError(err);
+                        return;
                     }
                     else{
                         e.onComplete();
                     }
-                } catch (Exception exception) {
-                    if (!e.isDisposed()) {
+                }
+                catch(Exception ex){
+                    if(!e.isDisposed()){
                         Integer i = R.string.err_network;
                         Throwable err = new Throwable(i.toString());
                         e.onError(err);
                     }
                 }
+
             }
         }).subscribeOn(Schedulers.io());
     }
@@ -90,13 +89,13 @@ public class Crawl88dusNovel implements ICrawlNovel {
     }
 
     @Override
-    public Observable<CrawlTextResult> fetchNovelText(final String novelId, final String chapterUrl) {
+    public Observable<CrawlTextResult> fetchNovelText(final String novelId,final String chapterUrl) {
         return Observable.create(new ObservableOnSubscribe<CrawlTextResult>() {
             @Override
             public void subscribe(ObservableEmitter<CrawlTextResult> e) throws Exception {
                 try{
                     Document doc = Jsoup.connect(chapterUrl).timeout(6000).get();
-                    Element item = doc.getElementsByClass("yd_text2").get(0);
+                    Element item = doc.getElementById("content");
                     String text = item.text();
                     if(text.isEmpty()){
                         CrawlNovelThrowable err = new CrawlNovelThrowable();
@@ -127,59 +126,80 @@ public class Crawl88dusNovel implements ICrawlNovel {
         }).subscribeOn(Schedulers.io());
     }
 
-    private boolean fetchNovel(final Element element, final PPNovel novel) {
-        try {
-            Element item = element.getElementsByTag("a").get(0);
-            novel.chapterUrl = item.attr("href");
-            item = element.getElementsByTag("img").get(0);
-            novel.imgUrl = item.attr("src");
+    private boolean fetchNovel(final Element element, final PPNovel novel){
+        try{
+            Element item = element.getElementsByTag("img").get(0);
+            novel.imgUrl = "https://www.tywx.la" + item.attr("src");
             novel.name = item.attr("alt");
-            Elements pps = element.getElementsByTag("p");
-            item = pps.get(2);
+            item = element.getElementsByTag("a").get(0);
+            novel.chapterUrl = "https://www.tywx.la" + item.attr("href");
+            item = element.getElementsByTag("span").get(0);
             novel.author = item.text();
             novel.author = novel.author.substring(3);
-            item = pps.get(4);
+            item = element.getElementsByClass("intro").get(0);
             novel.desc = item.text();
-            novel.desc = novel.desc.trim();
-            novel.desc = novel.desc.replaceAll("\n", "");
+            novel.desc = novel.desc.replaceAll(" ","");
             Integer type = new Integer(0);
-            if(fetchChaptersInner(novel.chapterUrl,novel.chapters,type)){
-                novel.type = type;
-            }
-            else{
+            boolean bRet = fetchChaptersInner(novel.chapterUrl,novel.chapters,type);
+            if(!bRet)
                 return false;
-            }
-        } catch (Exception ex) {
+            novel.type = type;
+        }catch(Exception ex){
             return false;
         }
+
         return true;
     }
 
-    private boolean fetchChaptersInner(final String url, final ArrayList<PPNovelChapter> chapters, Integer type) {
-        try {
+    private boolean fetchChaptersInner(final String url, final ArrayList<PPNovelChapter> chapters, Integer type){
+        try{
             Document doc = Jsoup.connect(url).timeout(6000).get();
-            Element item = doc.getElementsByTag("em").get(1);
-
             if(type != null){
-                if(item.text().indexOf("连载") != -1){
-                    type = PPNovel.TYPE_ING;
+                Element item = doc.getElementsByClass("ui_tb1").get(0);
+                Elements tds = item.getElementsByTag("td");
+                for(int i = 0 ; i <tds.size(); i++){
+                    Element it = tds.get(i);
+                    Elements bs = it.getElementsByTag("b");
+                    if(bs.size() >0 && bs.get(0).text().indexOf("小说分类") != -1){
+                        if(it.text().indexOf("连载") != -1){
+                            type = PPNovel.TYPE_ING;
+                        }
+                        else{
+                            type = PPNovel.TYPE_OVER;
+                        }
+                        break;
+                    }
                 }
-                else{
-                    type = PPNovel.TYPE_OVER;
+            }
+            Elements cs = doc.getElementsByClass("chapterlist");
+            if(cs.size() <= 1){
+                return false;
+            }
+            for(int i = 1 ; i < cs.size() ; i++){
+                Element item = cs.get(i);
+                Elements cl = item.getElementsByTag("a");
+                for(int j = 0 ; j < cl.size() ; j++){
+                    Element it = cl.get(j);
+                    String style = it.attr("style");
+                    if(style.indexOf("color:Gray") != -1){
+                        continue;
+                    }
+                    PPNovelChapter chapter = new PPNovelChapter();
+                    chapter.name = it.text();
+                    chapter.url = "https://www.tywx.la" + it.attr("href");
+                    chapters.add(chapter);
                 }
             }
 
-            Element root = doc.getElementsByClass("mulu").get(0);
-            Elements cs = root.getElementsByTag("a");
-            for(Element c :cs){
-                PPNovelChapter chapter = new PPNovelChapter();
-                chapter.url = url + c.attr("href");
-                chapter.name = c.text();
-                chapters.add(chapter);
+            if(chapters.size() == 0){
+                return false;
             }
-        } catch (IOException e) {
+
+        }
+        catch(Exception ex){
             return false;
         }
+
         return true;
     }
 }

@@ -116,7 +116,7 @@ public class PPNovelListAdapter extends BaseAdapter{
                 checkList.add(novel);
             }
         }
-        checkNovels(checkList, crawlNovel);
+        //checkNovels(checkList, crawlNovel);
     }
 
     private void removeItem(final int pos,String name){

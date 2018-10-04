@@ -31,6 +31,8 @@ import io.reactivex.disposables.Disposable;
 public class PPNovelCoverFragment extends Fragment {
     // TODO: Rename parameter arguments, choose names that match
 
+    final static public String TAG = "PPNovelCoverFragment";
+
 
     public PPNovelCoverFragment() {
         // Required empty public constructor
@@ -58,7 +60,7 @@ public class PPNovelCoverFragment extends Fragment {
         Glide.with(this).load(R.drawable.rm);
 
         final FragmentActivity activity = (FragmentActivity)this.getActivity();
-        CrawlNovelService.instance().loadPPNovels().observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<PPNovel>() {
+        CrawlNovelService.instance().loadPPNovels(getActivity().getApplicationContext().getFilesDir().getAbsolutePath()).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<PPNovel>() {
             @Override
             public void onSubscribe(Disposable d) {
 
@@ -78,7 +80,7 @@ public class PPNovelCoverFragment extends Fragment {
             public void onComplete() {
                 Fragment fragment = new PPNovelMainFragment();
                 FragmentTransaction transaction = activity.getSupportFragmentManager().beginTransaction();
-                transaction.replace(R.id.fragment_container,fragment);
+                transaction.replace(R.id.fragment_container,fragment,PPNovelMainFragment.TAG);
                 transaction.commit();
             }
         });

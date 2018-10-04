@@ -2,7 +2,9 @@ package org.andrei.ppreader.service;
 
 import android.support.annotation.NonNull;
 
+import org.andrei.ppreader.service.engines.Crawl88dusNovel;
 import org.andrei.ppreader.service.engines.CrawlMockNovel;
+import org.andrei.ppreader.service.engines.CrawlTianYiNovel;
 
 import java.util.ArrayList;
 
@@ -119,7 +121,13 @@ public class CrawlNovel implements ICrawlNovel {
     volatile Disposable m_searchDisposable = null;
 
     static {
-        ICrawlNovel crawlNovel = new CrawlMockNovel();
+        ICrawlNovel crawlNovel = new CrawlTianYiNovel();
+        m_s_crawlNovelEngines.add(crawlNovel);
+
+        crawlNovel = new Crawl88dusNovel();
+        m_s_crawlNovelEngines.add(crawlNovel);
+
+        crawlNovel = new CrawlMockNovel();
         m_s_crawlNovelEngines.add(crawlNovel);
     }
 

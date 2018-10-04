@@ -1,6 +1,7 @@
 package org.andrei.ppreader.ui.adapters;
 
 import android.net.Uri;
+import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,6 +23,7 @@ import org.andrei.ppreader.service.CrawlNovel;
 import org.andrei.ppreader.service.CrawlNovelService;
 import org.andrei.ppreader.service.CrawlNovelThrowable;
 import org.andrei.ppreader.service.PPNovel;
+import org.andrei.ppreader.ui.fragments.PPNovelReaderFragment;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
@@ -74,11 +76,17 @@ public class PPNovelSearchAdapter extends BaseAdapter {
     }
 
     private View createView(int i, ViewGroup vp) {
-        View view = m_parent.getLayoutInflater().inflate(R.layout.view_ppnovel_search, null);
+        final View view = m_parent.getLayoutInflater().inflate(R.layout.view_ppnovel_search, null);
         RxView.clicks(view).throttleFirst(500, TimeUnit.MILLISECONDS).subscribe(new Consumer<Object>() {
             @Override
             public void accept(Object o) throws Exception {
-
+                int pos = (Integer) view.getTag(R.id.tag_pos);
+                PPNovel novel = m_searches.get(pos);
+                PPNovelReaderFragment fragment = new PPNovelReaderFragment();
+                Bundle arg = new Bundle();
+                arg.putSerializable(PPNovelReaderFragment.NOVEL,novel);
+                fragment.setArguments(arg);
+                m_parent.getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,fragment,PPNovelReaderFragment.TAG).commit();
             }
         });
         return view;
@@ -105,6 +113,8 @@ public class PPNovelSearchAdapter extends BaseAdapter {
         ImageView img = (ImageView) view.findViewById(R.id.novel_search_cover);
         Glide.with(view).clear(img);
         Glide.with(view).load(novel.imgUrl).apply(RequestOptions.fitCenterTransform()).into(img);
+
+        view.setTag(R.id.tag_pos,i);
 
     }
 

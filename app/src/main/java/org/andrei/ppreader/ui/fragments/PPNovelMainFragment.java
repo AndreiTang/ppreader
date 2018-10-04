@@ -21,6 +21,8 @@ import org.andrei.ppreader.ui.adapters.PPNovelMainAdapter;
 public class PPNovelMainFragment extends Fragment {
     // TODO: Rename parameter arguments, choose names that match
 
+    public final static String TAG = "PPNovelMainFragment";
+
     public PPNovelMainFragment() {
         // Required empty public constructor
     }

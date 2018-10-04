@@ -27,6 +27,7 @@ import com.bumptech.glide.request.RequestOptions;
 import com.jakewharton.rxbinding2.view.RxView;
 
 import org.andrei.ppreader.R;
+import org.andrei.ppreader.service.CrawlNovelService;
 import org.andrei.ppreader.service.CrawlNovelThrowable;
 import org.andrei.ppreader.service.PPNovel;
 import org.andrei.ppreader.service.PPNovelChapter;
@@ -52,15 +53,11 @@ import io.reactivex.functions.Consumer;
  */
 public class PPNovelReaderFragment extends Fragment {
 
+    public final static String TAG = "PPNovelReaderFragment";
 
     public PPNovelReaderFragment() {
         // Required empty public constructor
     }
-
-    public void setPPNovel(PPNovel novel) {
-        m_novel = novel;
-    }
-
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -73,6 +70,17 @@ public class PPNovelReaderFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState) {
 
         super.onActivityCreated(savedInstanceState);
+        Bundle arg = getArguments();
+        if(arg != null){
+            m_novel = (PPNovel) arg.getSerializable(NOVEL);
+        }
+        else{
+            if(savedInstanceState != null){
+                m_novel = (PPNovel) savedInstanceState.getSerializable(NOVEL);
+            }
+        }
+
+        assert (m_novel!=null);
 
         final View root = this.getActivity().findViewById(android.R.id.content);
         root.findViewById(android.R.id.content).setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN);
@@ -109,6 +117,19 @@ public class PPNovelReaderFragment extends Fragment {
         });
 
         initPPNovelDict();
+    }
+
+    @Override
+    public void onSaveInstanceState (Bundle outState){
+        outState.putSerializable(NOVEL,m_novel);
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    public void onStop(){
+        super.onStop();
+        m_pageMgr.disposableFetchText();
+        getActivity().unregisterReceiver(m_batteryReceiver);
     }
 
 
@@ -175,7 +196,7 @@ public class PPNovelReaderFragment extends Fragment {
 
     private void initViewPager(@NonNull final View root) {
         final Fragment parent = this;
-        //With full screen , content view(root) can't get the correct size. It cause the viewpager can't get the correct size as well.
+        //With full screen , content view(root) can't get the correct size . It cause the viewpager can't get the correct size as well.
         //We directly use the screen height by  DisplayMetrics
         root.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
@@ -276,7 +297,7 @@ public class PPNovelReaderFragment extends Fragment {
                     lv = g;
                 }
                 int end = lv.getLastVisiblePosition() + 1 ;
-                if(end <= lv.getChildCount()-1){
+                if(end <= lv.getAdapter().getCount()-1){
                     lv.setSelection(end);
                 }
 
@@ -426,4 +447,5 @@ public class PPNovelReaderFragment extends Fragment {
     private PPNovel m_novel;
     private PPNovelReaderPageManager m_pageMgr = null;
     private GestureDetector m_gestureDetector = null;
+    public final static String NOVEL = "novel";
 }
