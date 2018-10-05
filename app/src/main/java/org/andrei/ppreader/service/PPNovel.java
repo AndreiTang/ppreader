@@ -39,6 +39,10 @@ public class PPNovel implements Serializable{
     @Expose
     public int type = TYPE_ING;
     @Expose
+    public long duration = 0;
+    @Expose
+    public long lastReadTime = 0;
+    @Expose
     public int currentChapterIndex= 0;
     @Expose
     public int currentChapterOffset = 0;

@@ -22,6 +22,7 @@ public class PPNovelMainFragment extends Fragment {
     // TODO: Rename parameter arguments, choose names that match
 
     public final static String TAG = "PPNovelMainFragment";
+    public final static String POS = "pos";
 
     public PPNovelMainFragment() {
         // Required empty public constructor
@@ -39,11 +40,16 @@ public class PPNovelMainFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         this.getActivity().findViewById(android.R.id.content).setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE|View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+        int pos = 0;
+        Bundle arg = getArguments();
+        if(arg != null){
+            pos = arg.getInt(POS);
+        }
 
         PPNovelMainAdapter adapter = new PPNovelMainAdapter(this.getChildFragmentManager());
         ViewPager vp = (ViewPager)getView().findViewById(R.id.main_viewpager);
         vp.setAdapter(adapter);
-
+        vp.setCurrentItem(pos);
     }
 
 

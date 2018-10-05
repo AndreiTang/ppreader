@@ -50,7 +50,7 @@
                         android:textSize="22sp" />
 
                     <TextView
-                        android:id="@+id/novel_dict_prog"
+                        android:id="@+id/novel_dict_progress"
                         android:layout_width="60dp"
                         android:layout_height="match_parent"
                         android:layout_weight="0"

@@ -35,38 +35,8 @@ public class MainActivity extends FragmentActivity {
             super.onBackPressed();
         }
         else if(this.getSupportFragmentManager().findFragmentByTag(PPNovelReaderFragment.TAG) != null){
-
             PPNovelReaderFragment  readerFragment = (PPNovelReaderFragment)getSupportFragmentManager().findFragmentByTag(PPNovelReaderFragment.TAG);
-            final PPNovel novel = readerFragment.getNovel();
-
-            if(CrawlNovelService.instance().getNovel(novel.chapterUrl) != null){
-                switchToMainFragment();
-                CrawlNovelService.instance().saveNovel(getApplicationContext().getFilesDir().getAbsolutePath(),novel);
-            }
-            else{
-                AlertDialog.Builder dlg = new AlertDialog.Builder(this);
-                String msg = getString(R.string.novel_list_add_msg);
-                msg = String.format(msg,novel.name);
-
-                dlg.setMessage(msg);
-                dlg.setNegativeButton(R.string.btn_cancel,new DialogInterface.OnClickListener(){
-
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        switchToMainFragment();
-                    }
-                });
-                dlg.setPositiveButton(R.string.btn_ok, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        CrawlNovelService.instance().saveNovel(getApplicationContext().getFilesDir().getAbsolutePath(),novel);
-                        CrawlNovelService.instance().getPPNovels().add(novel);
-                        switchToMainFragment();
-                    }
-                });
-                dlg.show();
-            }
-
+            readerFragment.switchToMainFragment(0);
         }
 
     }

@@ -1,13 +1,16 @@
 package org.andrei.ppreader.ui.fragments;
 
 
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 import android.util.DisplayMetrics;
 import android.view.GestureDetector;
@@ -74,6 +77,9 @@ public class PPNovelReaderFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState) {
 
         super.onActivityCreated(savedInstanceState);
+
+        m_beginTime = System.currentTimeMillis();
+
         Bundle arg = getArguments();
         if(arg != null){
             m_novel = (PPNovel) arg.getSerializable(NOVEL);
@@ -110,12 +116,20 @@ public class PPNovelReaderFragment extends Fragment {
         IntentFilter intentFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
         getActivity().registerReceiver(m_batteryReceiver, intentFilter);
 
+        //set control panel callback
         PPNovelReaderControlPanel panel = getView().findViewById(R.id.novel_reader_panel);
         panel.click().subscribe(new Consumer<Integer>() {
             @Override
             public void accept(Integer type) throws Exception {
                 if (type == PPNovelReaderControlPanel.DICT) {
-                    getView().findViewById(R.id.novel_reader_dict).setVisibility(View.VISIBLE);
+                    openControlPanel();
+                }
+                else if(type == PPNovelReaderControlPanel.LIST || type == PPNovelReaderControlPanel.SEARCH){
+                    int pos = 0;
+                    if(type == PPNovelReaderControlPanel.SEARCH){
+                        pos = 1;
+                    }
+                    switchToMainFragment(pos);
                 }
             }
         });
@@ -134,8 +148,74 @@ public class PPNovelReaderFragment extends Fragment {
         super.onStop();
         m_pageMgr.disposableFetchText();
         getActivity().unregisterReceiver(m_batteryReceiver);
+        m_novel.duration += System.currentTimeMillis() - m_beginTime;
+        m_novel.lastReadTime = System.currentTimeMillis();
+
+        if(CrawlNovelService.instance().getNovel(m_novel.chapterUrl) != null){
+            CrawlNovelService.instance().saveNovel(getActivity().getApplicationContext().getFilesDir().getAbsolutePath(),m_novel);
+        }
     }
 
+    public void switchToMainFragment(final int pos){
+        if(CrawlNovelService.instance().getNovel(m_novel.chapterUrl) != null){
+            switchToMainFragmentInner(pos);
+        }
+        else{
+            AlertDialog.Builder dlg = new AlertDialog.Builder(getActivity());
+            String msg = getString(R.string.novel_list_add_msg);
+            msg = String.format(msg,m_novel.name);
+            dlg.setMessage(msg);
+            dlg.setNegativeButton(R.string.btn_cancel,new DialogInterface.OnClickListener(){
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    switchToMainFragmentInner(pos);
+                }
+            });
+            dlg.setPositiveButton(R.string.btn_ok, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    CrawlNovelService.instance().getPPNovels().add(m_novel);
+                    switchToMainFragmentInner(pos);
+                }
+            });
+            dlg.show();
+        }
+    }
+
+    private void openControlPanel(){
+        ViewPager vp = (ViewPager) getView().findViewById(R.id.novel_reader_pager);
+        int curr = vp.getCurrentItem();
+        PPNovelTextPage page = m_pageMgr.getItem(curr);
+        assert (page != null);
+        int pos = m_novel.getPPNovelPosition(page.chapter);
+
+        TextView tv = getView().findViewById(R.id.novel_dict_progress);
+        String per =pos*100/m_novel.chapters.size() + "%";
+        tv.setText(per);
+
+        long duration = (m_novel.duration + System.currentTimeMillis() - m_beginTime)/1000;
+        long h = duration/3600;
+        long m = (duration%3600)/60;
+        String ds = getActivity().getString(R.string.novel_dict_duration);
+        ds = String.format(ds,h,m);
+        tv = getView().findViewById(R.id.novel_dict_duration);
+        tv.setText(ds);
+
+        ListView lv = getView().findViewById(R.id.novel_dict_list);
+        lv.setSelection(pos);
+
+        getView().findViewById(R.id.novel_reader_dict).setVisibility(View.VISIBLE);
+    }
+
+    private void switchToMainFragmentInner(int pos){
+        Fragment fragment = new PPNovelMainFragment();
+        Bundle arg = new Bundle();
+        arg.putInt(PPNovelMainFragment.POS,pos);
+        fragment.setArguments(arg);
+        FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.fragment_container,fragment,PPNovelMainFragment.TAG);
+        transaction.commit();
+    }
 
     private void initViewPagerTouch() {
         m_gestureDetector = new GestureDetector(getContext(), new GestureDetector.OnGestureListener() {
@@ -232,6 +312,7 @@ public class PPNovelReaderFragment extends Fragment {
         initViewPagerTouch();
     }
 
+    //initialize the control panel
     private void initPPNovelDict() {
         final LinearLayout dict = getView().findViewById(R.id.novel_reader_dict);
         TextView tv = dict.findViewById(R.id.novel_dict_author);
@@ -242,6 +323,7 @@ public class PPNovelReaderFragment extends Fragment {
         Glide.with(dict).clear(img);
         Glide.with(dict).load(m_novel.imgUrl).apply(RequestOptions.fitCenterTransform()).into(img);
 
+        //click to return reader page
         View v = getView().findViewById(R.id.novel_dict_mask);
         RxView.clicks(v).throttleFirst(200, TimeUnit.MICROSECONDS).subscribe(new Consumer<Object>() {
             @Override
@@ -250,6 +332,7 @@ public class PPNovelReaderFragment extends Fragment {
             }
         });
 
+        //switch between group and dict
         v = getView().findViewById(R.id.novel_dict_group);
         RxView.clicks(v).throttleFirst(200, TimeUnit.MICROSECONDS).subscribe(new Consumer<Object>() {
             @Override
@@ -267,6 +350,7 @@ public class PPNovelReaderFragment extends Fragment {
             }
         });
 
+        //prev page
         v = getView().findViewById(R.id.novel_dict_prev);
         RxView.clicks(v).throttleFirst(200, TimeUnit.MICROSECONDS).subscribe(new Consumer<Object>() {
             @Override
@@ -290,6 +374,7 @@ public class PPNovelReaderFragment extends Fragment {
             }
         });
 
+        //next page
         v = getView().findViewById(R.id.novel_dict_next);
         RxView.clicks(v).throttleFirst(200, TimeUnit.MICROSECONDS).subscribe(new Consumer<Object>() {
             @Override
@@ -454,4 +539,5 @@ public class PPNovelReaderFragment extends Fragment {
     private PPNovelReaderPageManager m_pageMgr = null;
     private GestureDetector m_gestureDetector = null;
     public final static String NOVEL = "novel";
+    private long m_beginTime = 0;
 }
