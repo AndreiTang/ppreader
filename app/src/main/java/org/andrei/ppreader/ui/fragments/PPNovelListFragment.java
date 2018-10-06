@@ -80,6 +80,16 @@ public class PPNovelListFragment extends Fragment {
                 that.notifyDataSetChanged();
             }
         });
+
+        v = getView().findViewById(R.id.novel_list_search_btn);
+        RxView.clicks(v).throttleFirst(1,TimeUnit.SECONDS).subscribe(new Consumer<Object>() {
+            @Override
+            public void accept(Object o) throws Exception {
+               ViewPager vp = getActivity().findViewById(R.id.main_viewpager);
+               vp.setCurrentItem(1);
+            }
+        });
+
     }
 
 

@@ -32,10 +32,11 @@ public class PPNovel implements Serializable{
     public String desc = "";
     @Expose
     public String author = "";
-    public int status = STATUS_UNCHECKED;
+
+    public transient int status = STATUS_UNCHECKED;
     @Expose
     public ArrayList<PPNovelChapter> chapters = new ArrayList<PPNovelChapter>();
-    public boolean needRemove = false;
+    public transient boolean needRemove = false;
     @Expose
     public int type = TYPE_ING;
     @Expose

@@ -7,6 +7,7 @@ import android.view.ViewTreeObserver;
 import android.widget.TextView;
 
 import org.andrei.ppreader.R;
+import org.andrei.ppreader.service.CrawlChapterResult;
 import org.andrei.ppreader.service.CrawlNovel;
 import org.andrei.ppreader.service.CrawlNovelService;
 import org.andrei.ppreader.service.CrawlNovelThrowable;
@@ -24,14 +25,20 @@ import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 
 
 public class PPNovelReaderPageManager {
 
+    public final static  int VALIDATE= -1;
+
     public PPNovelReaderPageManager(@NonNull final PPNovel novel, int tvHeight) {
         m_tvHeight = tvHeight;
         m_novel = novel;
+        m_crawlNovel = CrawlNovelService.instance().builder(m_novel.engineIndex);
         initializePages(novel);
+        fetchChapters();
     }
 
     public PPNovelTextPage getItem(int pos) {
@@ -118,12 +125,36 @@ public class PPNovelReaderPageManager {
             }
             m_disposable = null;
         }
+
+        if(m_fetchChapterDisposable != null){
+            m_fetchChapterDisposable.dispose();
+            m_fetchChapterDisposable = null;
+        }
+    }
+
+    private void fetchChapters(){
+        m_fetchChapterDisposable = m_crawlNovel.fetchChapters(m_novel).observeOn(Schedulers.io()).subscribe(new Consumer<CrawlChapterResult>() {
+            @Override
+            public void accept(CrawlChapterResult crawlChapterResult) throws Exception {
+                m_fetchChapterDisposable = null;
+                if(m_novel.chapters.size() < crawlChapterResult.chapters.size()){
+                    for(int i = m_novel.chapters.size() ; i < crawlChapterResult.chapters.size() ; i ++){
+                        PPNovelChapter item = crawlChapterResult.chapters.get(i);
+                        m_novel.chapters.add(item);
+                        PPNovelTextPage page = new PPNovelTextPage();
+                        page.chapter = item.url;
+                        page.title = item.name;
+                        m_pages.add(page);
+                    }
+                    if(m_textPageObservable.m_observer != null){
+                        m_textPageObservable.m_observer.onNext(VALIDATE);
+                    }
+                }
+            }
+        });
     }
 
     private void fetchChapterTextProc() {
-        if (m_crawlNovel == null) {
-            m_crawlNovel = CrawlNovelService.instance().builder(m_novel.engineIndex);
-        }
         if (m_fetchList.size() == 0) {
             return;
         }
@@ -367,5 +398,6 @@ public class PPNovelReaderPageManager {
     private ArrayList<PPNovelChapter> m_fetchList = new ArrayList<PPNovelChapter>();
     private boolean m_bRunning = false;
     private Disposable m_disposable = null;
+    private Disposable m_fetchChapterDisposable = null;
 
 }

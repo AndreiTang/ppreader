@@ -19,7 +19,7 @@
             android:gravity="center_vertical|left">
 
             <ImageButton
-                android:id="@+id/novel_list"
+                android:id="@+id/novel_list_btn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dp"

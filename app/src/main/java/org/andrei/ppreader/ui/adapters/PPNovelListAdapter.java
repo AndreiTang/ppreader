@@ -118,7 +118,7 @@ public class PPNovelListAdapter extends BaseAdapter{
                 checkList.add(novel);
             }
         }
-        //checkNovels(checkList, crawlNovel);
+        checkNovels(checkList, crawlNovel);
     }
 
     private void removeItem(final int pos,String name){
@@ -131,7 +131,8 @@ public class PPNovelListAdapter extends BaseAdapter{
         dlg.setPositiveButton(R.string.btn_ok, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                CrawlNovelService.instance().getPPNovels().remove(pos);
+                PPNovel novel = CrawlNovelService.instance().getPPNovels().get(pos);
+                CrawlNovelService.instance().removeNovel(m_parent.getActivity().getApplicationContext().getFilesDir().getAbsolutePath(),novel);
                 that.notifyDataSetChanged();
             }
         });
@@ -165,10 +166,19 @@ public class PPNovelListAdapter extends BaseAdapter{
             @Override
             public void onNext(CrawlChapterResult value) {
                 ArrayList<PPNovel> novels = CrawlNovelService.instance().getPPNovels();
-                for(int i = 0; i < novels.size(); i++){
-                    PPNovel item = novels.get(i);
+                for(PPNovel item : novels){
                     if(item.chapterUrl.compareTo(value.chapterUrl) == 0){
-                        item.status = PPNovel.STATUS_CHECKED;
+                        if( item.chapters.size() <value.chapters.size()){
+                            //there maybe some problems in the special case.
+                            for(int i = item.chapters.size() ; i < value.chapters.size() ; i++){
+                                item.chapters.add(value.chapters.get(i));
+                            }
+                            item.status = PPNovel.STATUS_CHECKED;
+                        }
+                        else{
+                            //it mean the red spot will not show , due to none of new chapters
+                            item.status = PPNovel.STATUS_CONFIRMED;
+                        }
                         that.notifyDataSetChanged();
                         break;
                     }

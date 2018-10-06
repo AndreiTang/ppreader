@@ -50,6 +50,9 @@ public class PPNovelMainFragment extends Fragment {
         ViewPager vp = (ViewPager)getView().findViewById(R.id.main_viewpager);
         vp.setAdapter(adapter);
         vp.setCurrentItem(pos);
+
+
+
     }
 
 

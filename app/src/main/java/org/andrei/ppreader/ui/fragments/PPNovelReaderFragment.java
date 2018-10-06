@@ -439,9 +439,15 @@ public class PPNovelReaderFragment extends Fragment {
 
             @Override
             public void onNext(Integer index) {
-                //if this text is not in the current page, don't immedially set value. Otherwise, the page will incorrectly be shown.For example , 前面的页一刷新，会把现在的页面刷掉
                 final ViewPager vp = (ViewPager) getView().findViewById(R.id.novel_reader_pager);
                 final PPNovelReaderAdapter adapter = (PPNovelReaderAdapter) vp.getAdapter();
+                //if index is -1 , it mean it need notify ui
+                if(index == PPNovelReaderPageManager.VALIDATE && adapter != null){
+                    adapter.notifyDataSetChanged();
+                    return;
+                }
+
+                //if this text is not in the current page, don't immedially set value. Otherwise, the page will incorrectly be shown.For example , 前面的页一刷新，会把现在的页面刷掉
                 int curr = vp.getCurrentItem();
                 if (curr == index) {
                     PPNovelTextPage page = m_pageMgr.getItem(index);

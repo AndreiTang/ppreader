@@ -3,6 +3,7 @@ package org.andrei.ppreader.ui.fragments;
 
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,15 +14,20 @@ import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
 
+import com.jakewharton.rxbinding2.view.RxView;
+
 import org.andrei.ppreader.R;
 import org.andrei.ppreader.service.CrawlNovel;
 import org.andrei.ppreader.service.CrawlNovelService;
 import org.andrei.ppreader.service.PPNovel;
 import org.andrei.ppreader.ui.adapters.PPNovelSearchAdapter;
 
+import java.util.concurrent.TimeUnit;
+
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -69,6 +75,15 @@ public class PPNovelSearchFragment extends Fragment {
             @Override
             public boolean onQueryTextChange(String newText) {
                 return false;
+            }
+        });
+
+        View v = getView().findViewById(R.id.novel_list_btn);
+        RxView.clicks(v).throttleFirst(1, TimeUnit.SECONDS).subscribe(new Consumer<Object>() {
+            @Override
+            public void accept(Object o) throws Exception {
+                ViewPager vp = getActivity().findViewById(R.id.main_viewpager);
+                vp.setCurrentItem(0);
             }
         });
 

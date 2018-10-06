@@ -80,6 +80,7 @@ public class CrawlNovelService {
         if(file.exists()){
             file.delete();
         }
+        m_novels.remove(novel);
     }
 
     public Observable<PPNovel> loadPPNovels(final String folder){
@@ -169,6 +170,8 @@ public class CrawlNovelService {
                         if(!novelTxt.isEmpty()){
                             Gson gson = new Gson();
                             PPNovel novel = gson.fromJson(novelTxt,PPNovel.class);
+                            novel.status = PPNovel.STATUS_UNCHECKED;
+                            novel.needRemove = false;
                             m_novels.add(novel);
                         }
                     }

@@ -27,7 +27,7 @@ public class Crawl88dusNovel implements ICrawlNovel {
             @Override
             public void subscribe(ObservableEmitter<PPNovel> e) throws Exception {
                 try {
-                    String url = "https://so.88dus.com/search/so.php?search_field=0&q=" + "大明";
+                    String url = "https://so.88dus.com/search/so.php?search_field=0&q=" + name;
                     Document doc = Jsoup.connect(url).timeout(6000).get();
                     Elements els = doc.getElementsByClass("ops_cover");
                     if (els.size() == 0) {
