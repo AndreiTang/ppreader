@@ -121,14 +121,14 @@ public class CrawlNovel implements ICrawlNovel {
     volatile Disposable m_searchDisposable = null;
 
     static {
-        ICrawlNovel crawlNovel = new CrawlTianYiNovel();
+        ICrawlNovel crawlNovel = new Crawl88dusNovel();
         m_s_crawlNovelEngines.add(crawlNovel);
 
-        crawlNovel = new Crawl88dusNovel();
+        crawlNovel = new CrawlTianYiNovel();
         m_s_crawlNovelEngines.add(crawlNovel);
 
-        crawlNovel = new CrawlMockNovel();
-        m_s_crawlNovelEngines.add(crawlNovel);
+//        crawlNovel = new CrawlMockNovel();
+//        m_s_crawlNovelEngines.add(crawlNovel);
     }
 
 }

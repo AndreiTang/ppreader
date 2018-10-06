@@ -28,11 +28,9 @@ public class MainActivity extends FragmentActivity {
 
     @Override
     public void onBackPressed() {
-        List<android.support.v4.app.Fragment> fs  = getSupportFragmentManager().getFragments();
-        int sz = fs.size();
         // super.onBackPressed();//注释掉这行,back键不退出activity
         if(this.getSupportFragmentManager().findFragmentByTag(PPNovelMainFragment.TAG) != null){
-            super.onBackPressed();
+            finish();
         }
         else if(this.getSupportFragmentManager().findFragmentByTag(PPNovelReaderFragment.TAG) != null){
             PPNovelReaderFragment  readerFragment = (PPNovelReaderFragment)getSupportFragmentManager().findFragmentByTag(PPNovelReaderFragment.TAG);
