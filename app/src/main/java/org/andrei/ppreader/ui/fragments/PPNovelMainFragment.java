@@ -51,8 +51,6 @@ public class PPNovelMainFragment extends Fragment {
         vp.setAdapter(adapter);
         vp.setCurrentItem(pos);
 
-
-
     }
 
 

@@ -3,6 +3,7 @@ package org.andrei.ppreader.ui.adapters;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,6 +25,8 @@ import org.andrei.ppreader.service.PPNovel;
 import org.andrei.ppreader.ui.fragments.PPNovelReaderFragment;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observer;
@@ -33,11 +36,20 @@ import io.reactivex.functions.Consumer;
 
 public class PPNovelListAdapter extends BaseAdapter{
 
-    public PPNovelListAdapter(Fragment parent){
+    public PPNovelListAdapter(@NonNull Fragment parent){
         m_parent = parent;
-        if(m_parent != null){
-            initialize();
-        }
+        Collections.sort(CrawlNovelService.instance().getPPNovels(), new Comparator<PPNovel>() {
+            @Override
+            public int compare(PPNovel o1, PPNovel o2) {
+                if(o1.lastReadTime >= o2.lastReadTime){
+                    return -1;
+                }
+                else{
+                    return 1;
+                }
+            }
+        });
+        initialize();
     }
     @Override
     public int getCount() {

@@ -27,16 +27,33 @@ public class CrawlNovel implements ICrawlNovel {
     @Override
     public Observable<PPNovel> search(final String name) {
 
+        String search[] = name.split("#");
+        ArrayList<ICrawlNovel> engines = new ArrayList<ICrawlNovel>();
+        String searchName;
+        if(search[0].compareTo("0") == 0){
+            engines.add(m_s_crawlNovelEngines.get(0));
+            searchName = search[1];
+        }
+        else if(search[0].compareTo("1") == 0){
+            engines.add(m_s_crawlNovelEngines.get(1));
+            searchName = search[1];
+        }
+        else{
+            engines.addAll(m_s_crawlNovelEngines);
+            searchName = name;
+        }
+
         //cancel the last searching.
         if (m_searchDisposable != null) {
             m_searchDisposable.dispose();
             m_searchDisposable = null;
         }
-        final ArrayList<ICrawlNovel> crawlNovels = new ArrayList<ICrawlNovel>(m_s_crawlNovelEngines);
+        final String sName = searchName;
+        final ArrayList<ICrawlNovel> crawlNovels = engines;
         return Observable.create(new ObservableOnSubscribe<PPNovel>() {
             @Override
             public void subscribe(ObservableEmitter<PPNovel> e) throws Exception {
-                searchProc(name, crawlNovels, e);
+                searchProc(sName, crawlNovels, e);
             }
         }).doOnError(new Consumer<Throwable>() {
             @Override
@@ -78,6 +95,7 @@ public class CrawlNovel implements ICrawlNovel {
         }
 
         ICrawlNovel crawlNovel = crawlNovels.remove(0);
+        final int index = m_s_crawlNovelEngines.indexOf(crawlNovel);
         crawlNovel.search(name).subscribeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<PPNovel>() {
 
             Disposable m_disposable = null;
@@ -89,6 +107,7 @@ public class CrawlNovel implements ICrawlNovel {
 
             @Override
             public void onNext(PPNovel value) {
+                value.engineIndex = index;
                 emitter.onNext(value);
             }
 

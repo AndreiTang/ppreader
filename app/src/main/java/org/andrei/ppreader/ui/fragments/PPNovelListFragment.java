@@ -7,6 +7,7 @@ import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.GridView;
 
 import com.jakewharton.rxbinding2.view.RxView;
@@ -19,6 +20,8 @@ import org.andrei.ppreader.service.PPNovel;
 import org.andrei.ppreader.ui.adapters.PPNovelListAdapter;
 
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observer;
@@ -48,12 +51,12 @@ public class PPNovelListFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState){
         super.onActivityCreated(savedInstanceState);
 
-        PPNovelListAdapter adapter = new PPNovelListAdapter(this);
-        GridView vp = (GridView) getView().findViewById(R.id.novel_list);
+        final PPNovelListAdapter adapter = new PPNovelListAdapter(this);
+        final GridView vp = (GridView) getView().findViewById(R.id.novel_list);
         vp.setAdapter(adapter);
-
         View v = getView().findViewById(R.id.novel_list_edit_btn);
         final PPNovelListAdapter that = adapter;
+
 
         RxView.clicks(v).throttleFirst(1, TimeUnit.SECONDS).subscribe(new Consumer<Object>() {
             @Override

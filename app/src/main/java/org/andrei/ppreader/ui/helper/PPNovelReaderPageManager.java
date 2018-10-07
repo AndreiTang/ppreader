@@ -133,10 +133,14 @@ public class PPNovelReaderPageManager {
     }
 
     private void fetchChapters(){
-        m_fetchChapterDisposable = m_crawlNovel.fetchChapters(m_novel).observeOn(Schedulers.io()).subscribe(new Consumer<CrawlChapterResult>() {
+        m_crawlNovel.fetchChapters(m_novel).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<CrawlChapterResult>() {
             @Override
-            public void accept(CrawlChapterResult crawlChapterResult) throws Exception {
-                m_fetchChapterDisposable = null;
+            public void onSubscribe(Disposable d) {
+                m_fetchChapterDisposable = d;
+            }
+
+            @Override
+            public void onNext(CrawlChapterResult crawlChapterResult) {
                 if(m_novel.chapters.size() < crawlChapterResult.chapters.size()){
                     for(int i = m_novel.chapters.size() ; i < crawlChapterResult.chapters.size() ; i ++){
                         PPNovelChapter item = crawlChapterResult.chapters.get(i);
@@ -150,9 +154,51 @@ public class PPNovelReaderPageManager {
                         m_textPageObservable.m_observer.onNext(VALIDATE);
                     }
                 }
+                else{
+                    if(m_textPageObservable.m_observer != null){
+                        m_textPageObservable.m_observer.onNext(VALIDATE);
+                    }
+                }
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                m_fetchChapterDisposable = null;
+            }
+
+            @Override
+            public void onComplete() {
+                m_fetchChapterDisposable = null;
             }
         });
     }
+
+//    private void fetchChapters(){
+//        m_fetchChapterDisposable = m_crawlNovel.fetchChapters(m_novel).observeOn(Schedulers.io()).subscribe(new Consumer<CrawlChapterResult>() {
+//            @Override
+//            public void accept(CrawlChapterResult crawlChapterResult) throws Exception {
+//                m_fetchChapterDisposable = null;
+//                if(m_novel.chapters.size() < crawlChapterResult.chapters.size()){
+//                    for(int i = m_novel.chapters.size() ; i < crawlChapterResult.chapters.size() ; i ++){
+//                        PPNovelChapter item = crawlChapterResult.chapters.get(i);
+//                        m_novel.chapters.add(item);
+//                        PPNovelTextPage page = new PPNovelTextPage();
+//                        page.chapter = item.url;
+//                        page.title = item.name;
+//                        m_pages.add(page);
+//                    }
+//                    if(m_textPageObservable.m_observer != null){
+//                        m_textPageObservable.m_observer.onNext(VALIDATE);
+//                    }
+//                }
+//                else{
+//                    if(m_textPageObservable.m_observer != null){
+//                        m_textPageObservable.m_observer.onNext(VALIDATE);
+//                    }
+//                }
+//            }
+//        });
+//    }
 
     private void fetchChapterTextProc() {
         if (m_fetchList.size() == 0) {
@@ -228,7 +274,6 @@ public class PPNovelReaderPageManager {
         final String text = tv.getText().toString();
         int lineHeight = tv.getLineHeight();
         int lineCount = tv.getLineCount();
-        float lineSpace = tv.getLineSpacingExtra();
 
         int beginPos = getFirstChapterItemPosition(page.chapter);
         PPNovelTextPage firstPage = m_pages.get(beginPos);
@@ -243,12 +288,7 @@ public class PPNovelReaderPageManager {
             if (pageTextHeight < m_tvHeight) {
                 item.lines.add(lineText);
             } else {
-                if (pageTextHeight - lineSpace <= m_tvHeight) {
-                    item.lines.add(lineText);
-                } else {
-                    i--;
-                }
-
+                i--;
                 //the the font size of title is bigger than lines in body. So the line size in body decrease 1
                 if (offset == 0) {
                     i--;

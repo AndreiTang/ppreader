@@ -26,11 +26,17 @@ import java.util.List;
 
 public class MainActivity extends FragmentActivity {
 
+    public static final String TAG_FRAGMENT = "fragment";
+    public static final String MAIN_FRAGMENT = "main";
+    public static final String READER_FRAGMENT = "reader";
+    public static final String NOVEL = "novel";
+
     @Override
     public void onBackPressed() {
         // super.onBackPressed();//注释掉这行,back键不退出activity
         if(this.getSupportFragmentManager().findFragmentByTag(PPNovelMainFragment.TAG) != null){
             finish();
+            System.exit(0);
         }
         else if(this.getSupportFragmentManager().findFragmentByTag(PPNovelReaderFragment.TAG) != null){
             PPNovelReaderFragment  readerFragment = (PPNovelReaderFragment)getSupportFragmentManager().findFragmentByTag(PPNovelReaderFragment.TAG);
@@ -45,21 +51,38 @@ public class MainActivity extends FragmentActivity {
         setContentView(R.layout.activity_main);
         if(savedInstanceState == null){
             PPNovelCoverFragment fragment = new PPNovelCoverFragment();
-            //PPNovelReaderFragment fragment = new PPNovelReaderFragment();
-            //fragment.setPPNovel(MockData.novel);
             getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,fragment,PPNovelCoverFragment.TAG).commit();
         }
         else{
-
+            String frag = savedInstanceState.getString(TAG_FRAGMENT);
+            if(frag.compareTo(READER_FRAGMENT) == 0){
+                PPNovelMainFragment fragment = new PPNovelMainFragment();
+                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,fragment,PPNovelMainFragment.TAG).commit();
+            }
+            else{
+                PPNovelReaderFragment fragment = new PPNovelReaderFragment();
+                String id  =  savedInstanceState.getString(NOVEL);
+                PPNovel novel = CrawlNovelService.instance().getNovel(id);
+                Bundle arg  = new Bundle();
+                arg.putSerializable(PPNovelReaderFragment.NOVEL,novel);
+                fragment.setArguments(arg);
+                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,fragment,PPNovelReaderFragment.TAG).commit();
+            }
         }
         changeStatusBarColor();
     }
 
-    private void switchToMainFragment(){
-        android.support.v4.app.Fragment fragment = new PPNovelMainFragment();
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.fragment_container,fragment,PPNovelMainFragment.TAG);
-        transaction.commit();
+    @Override
+    protected void onSaveInstanceState (Bundle outState){
+        super.onSaveInstanceState(outState);
+        if(this.getSupportFragmentManager().findFragmentByTag(PPNovelMainFragment.TAG) != null){
+            outState.putString(TAG_FRAGMENT,MAIN_FRAGMENT);
+        }
+        else if(this.getSupportFragmentManager().findFragmentByTag(PPNovelReaderFragment.TAG) != null){
+            outState.putString(TAG_FRAGMENT,READER_FRAGMENT);
+            PPNovelReaderFragment  readerFragment = (PPNovelReaderFragment)getSupportFragmentManager().findFragmentByTag(PPNovelReaderFragment.TAG);
+            outState.putString(NOVEL,readerFragment.getNovel().chapterUrl);
+        }
     }
 
     private void changeStatusBarColor(){

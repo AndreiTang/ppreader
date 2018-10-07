@@ -112,9 +112,6 @@ public class PPNovelReaderFragment extends Fragment {
         tmView.setFormat24Hour("HH:mm");
         tmView.setFormat12Hour("hh:mm a");
 
-        //monitor the battery
-        IntentFilter intentFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-        getActivity().registerReceiver(m_batteryReceiver, intentFilter);
 
         //set control panel callback
         PPNovelReaderControlPanel panel = getView().findViewById(R.id.novel_reader_panel);
@@ -141,6 +138,14 @@ public class PPNovelReaderFragment extends Fragment {
     public void onSaveInstanceState (Bundle outState){
         outState.putSerializable(NOVEL,m_novel);
         super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    public void onStart(){
+        super.onStart();
+        //monitor the battery
+        IntentFilter intentFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+        getActivity().registerReceiver(m_batteryReceiver, intentFilter);
     }
 
     @Override

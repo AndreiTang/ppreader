@@ -48,6 +48,7 @@ public class Crawl88dusNovel implements ICrawlNovel {
                         if (fetchNovel(item, novel)) {
                             isFetched = true;
                             e.onNext(novel);
+                            Thread.sleep(3000);
                         }
                     }
                     if (!isFetched) {
@@ -81,9 +82,10 @@ public class Crawl88dusNovel implements ICrawlNovel {
                     e.onComplete();
                 }
                 else{
-                    Throwable err = new Throwable();
-                    e.onError(err);
-
+                    if(!e.isDisposed()){
+                        Throwable err = new Throwable();
+                        e.onError(err);
+                    }
                 }
             }
         }).subscribeOn(Schedulers.io());
@@ -97,7 +99,7 @@ public class Crawl88dusNovel implements ICrawlNovel {
                 try{
                     Document doc = Jsoup.connect(chapterUrl).timeout(6000).get();
                     Element item = doc.getElementsByClass("yd_text2").get(0);
-                    String text = item.text();
+                    String text = item.html();
                     if(text.isEmpty()){
                         CrawlNovelThrowable err = new CrawlNovelThrowable();
                         err.novelUrl = novelId;
@@ -105,8 +107,8 @@ public class Crawl88dusNovel implements ICrawlNovel {
                         e.onError(err);
                         return;
                     }
-                    text = text.replaceAll("&nbsp;","");
-                    text = text.replaceAll("<br /><br />","\n");
+                    text = Utils.adjustText(text);
+
 
                     CrawlTextResult ret = new CrawlTextResult();
                     ret.chapterUrl = chapterUrl;
@@ -169,7 +171,12 @@ public class Crawl88dusNovel implements ICrawlNovel {
                 }
             }
 
-            Element root = doc.getElementsByClass("mulu").get(0);
+            Elements mulus = doc.getElementsByClass("mulu");
+            if(mulus == null || mulus.size() == 0){
+                return false;
+            }
+
+            Element root = mulus.get(0);
             Elements cs = root.getElementsByTag("a");
             for(Element c :cs){
                 PPNovelChapter chapter = new PPNovelChapter();
@@ -178,6 +185,9 @@ public class Crawl88dusNovel implements ICrawlNovel {
                 chapters.add(chapter);
             }
         } catch (IOException e) {
+            return false;
+        }
+        catch (Exception ex){
             return false;
         }
         return true;

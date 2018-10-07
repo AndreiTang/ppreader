@@ -27,7 +27,7 @@ public class CrawlTianYiNovel implements ICrawlNovel {
             public void subscribe(ObservableEmitter<PPNovel> e) throws Exception {
                 try{
                     String url = "https://www.tywx.la/searchbook.php?keyword=" + name;
-                    Document doc = Jsoup.connect(url).timeout(6000).get();
+                    Document doc = Jsoup.connect(url).timeout(60000).get();
                     Elements root = doc.getElementsByAttributeValue("id","alistbox");
                     if(root == null || root.size() == 0){
                         Integer i = R.string.err_not_found;
@@ -94,9 +94,9 @@ public class CrawlTianYiNovel implements ICrawlNovel {
             @Override
             public void subscribe(ObservableEmitter<CrawlTextResult> e) throws Exception {
                 try{
-                    Document doc = Jsoup.connect(chapterUrl).timeout(6000).get();
+                    Document doc = Jsoup.connect(chapterUrl).timeout(60000).get();
                     Element item = doc.getElementById("content");
-                    String text = item.text();
+                    String text = item.html();
                     if(text.isEmpty()){
                         CrawlNovelThrowable err = new CrawlNovelThrowable();
                         err.novelUrl = novelId;
@@ -104,8 +104,9 @@ public class CrawlTianYiNovel implements ICrawlNovel {
                         e.onError(err);
                         return;
                     }
-                    text = text.replaceAll("&nbsp;","");
-                    text = text.replaceAll("<br /><br />","\n");
+                    text = Utils.adjustText(text);
+//                    text = text.replaceAll("&nbsp;","");
+//                    text = text.replaceAll("<br /><br />","\n");
 
                     CrawlTextResult ret = new CrawlTextResult();
                     ret.chapterUrl = chapterUrl;
@@ -153,7 +154,7 @@ public class CrawlTianYiNovel implements ICrawlNovel {
 
     private boolean fetchChaptersInner(final String url, final ArrayList<PPNovelChapter> chapters, Integer type){
         try{
-            Document doc = Jsoup.connect(url).timeout(6000).get();
+            Document doc = Jsoup.connect(url).timeout(60000).get();
             if(type != null){
                 Element item = doc.getElementsByClass("ui_tb1").get(0);
                 Elements tds = item.getElementsByTag("td");

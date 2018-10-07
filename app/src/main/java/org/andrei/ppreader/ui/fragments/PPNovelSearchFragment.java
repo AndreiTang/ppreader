@@ -102,7 +102,7 @@ public class PPNovelSearchFragment extends Fragment {
 
     private void insertFootView() {
         ListView lv = (ListView) getView().findViewById(R.id.novel_search_ret_list);
-        if (lv.getChildCount() == 0 || !m_isLoading) {
+        if (lv == null || lv.getChildCount() == 0 || !m_isLoading) {
             return;
         }
         int pos = lv.getLastVisiblePosition();
