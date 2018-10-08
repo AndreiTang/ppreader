@@ -247,10 +247,10 @@ public class PPNovelReaderPageManager {
                     m_bRunning = false;
                 }
 
-//                CrawlNovelThrowable err = (CrawlNovelThrowable) e;
-//                PPNovelTextPage page = getItem(err.chapterUrl, 0);
-//                assert (page != null);
-//                page.status = PPNovelTextPage.STATUS_FAIL;
+                CrawlNovelThrowable err = (CrawlNovelThrowable) e;
+                PPNovelTextPage page = getItem(err.chapterUrl, 0);
+                assert (page != null);
+                page.status = PPNovelTextPage.STATUS_FAIL;
 //                int index = getFirstChapterItemPosition(err.chapterUrl);
                 if (m_textPageObservable.m_observer != null) {
                     m_textPageObservable.m_observer.onError(e);

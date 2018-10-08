@@ -28,7 +28,7 @@ public class Crawl88dusNovel implements ICrawlNovel {
             public void subscribe(ObservableEmitter<PPNovel> e) throws Exception {
                 try {
                     String url = "https://so.88dus.com/search/so.php?search_field=0&q=" + name;
-                    Document doc = Jsoup.connect(url).timeout(6000).get();
+                    Document doc = Jsoup.connect(url).timeout(18000).get();
                     Elements els = doc.getElementsByClass("ops_cover");
                     if (els.size() == 0) {
                         Throwable err = new Throwable(new Integer(R.string.err_not_found).toString());
@@ -48,7 +48,7 @@ public class Crawl88dusNovel implements ICrawlNovel {
                         if (fetchNovel(item, novel)) {
                             isFetched = true;
                             e.onNext(novel);
-                            Thread.sleep(3000);
+                            Thread.sleep(500);
                         }
                     }
                     if (!isFetched) {
@@ -97,7 +97,7 @@ public class Crawl88dusNovel implements ICrawlNovel {
             @Override
             public void subscribe(ObservableEmitter<CrawlTextResult> e) throws Exception {
                 try{
-                    Document doc = Jsoup.connect(chapterUrl).timeout(6000).get();
+                    Document doc = Jsoup.connect(chapterUrl).timeout(18000).get();
                     Element item = doc.getElementsByClass("yd_text2").get(0);
                     String text = item.html();
                     if(text.isEmpty()){
@@ -159,7 +159,7 @@ public class Crawl88dusNovel implements ICrawlNovel {
 
     private boolean fetchChaptersInner(final String url, final ArrayList<PPNovelChapter> chapters, Integer type) {
         try {
-            Document doc = Jsoup.connect(url).timeout(6000).get();
+            Document doc = Jsoup.connect(url).timeout(18000).get();
             Element item = doc.getElementsByTag("em").get(1);
 
             if(type != null){

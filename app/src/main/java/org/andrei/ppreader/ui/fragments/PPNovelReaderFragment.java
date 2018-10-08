@@ -42,6 +42,7 @@ import org.andrei.ppreader.ui.helper.PPNovelRxBinding;
 import org.andrei.ppreader.ui.helper.PPNovelTextPage;
 import org.andrei.ppreader.ui.views.PPNovelReaderControlPanel;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -104,6 +105,7 @@ public class PPNovelReaderFragment extends Fragment {
             @Override
             public void accept(Integer position) throws Exception {
                 selectCurrentItem(position);
+                preloadPPNovelTextPage(position);
             }
         });
 
@@ -138,6 +140,13 @@ public class PPNovelReaderFragment extends Fragment {
     public void onSaveInstanceState (Bundle outState){
         outState.putSerializable(NOVEL,m_novel);
         super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    public void onResume(){
+        super.onResume();
+        //when the page restore, full screen need be reset
+        getView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN);
     }
 
     @Override
@@ -184,6 +193,20 @@ public class PPNovelReaderFragment extends Fragment {
                 }
             });
             dlg.show();
+        }
+    }
+
+    private void preloadPPNovelTextPage(final int pos){
+        ArrayList<PPNovelTextPage> pages = m_pageMgr.getPages();
+        for(int i = pos +1 ; i < pages.size(); i++){
+            PPNovelTextPage page = pages.get(i);
+            if(page.offset == 0){
+                if(page.status  == PPNovelTextPage.STATUS_INIT){
+                    m_pageMgr.fetchChapterText(page);
+                    page.status = PPNovelTextPage.STATUS_LOADING;
+                }
+                return;
+            }
         }
     }
 
@@ -489,6 +512,8 @@ public class PPNovelReaderFragment extends Fragment {
         } else if (item.status == PPNovelTextPage.STATUS_LOADED) {
             item.status = PPNovelTextPage.STATUS_OK;
             adapter.update(position);
+
+
         } else {
             adapter.update(position);
         }

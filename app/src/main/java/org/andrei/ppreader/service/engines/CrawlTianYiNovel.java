@@ -43,6 +43,7 @@ public class CrawlTianYiNovel implements ICrawlNovel {
                         if(bRet){
                             bFetch = true;
                             e.onNext(novel);
+                            Thread.sleep(500);
                         }
                     }
                     if(!bFetch){

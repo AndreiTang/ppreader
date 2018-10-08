@@ -67,6 +67,7 @@
         android:layout_marginTop="10dp"
         android:columnWidth="100dp"
         android:numColumns="auto_fit"
+        android:scrollbars = "none"
         android:stretchMode="spacingWidth"
         android:verticalSpacing="20dp" />
 

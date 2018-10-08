@@ -186,6 +186,7 @@ public class PPNovelListAdapter extends BaseAdapter{
                                 item.chapters.add(value.chapters.get(i));
                             }
                             item.status = PPNovel.STATUS_CHECKED;
+                            CrawlNovelService.instance().saveNovel(m_parent.getActivity().getApplicationContext().getFilesDir().getAbsolutePath(),item);
                         }
                         else{
                             //it mean the red spot will not show , due to none of new chapters
