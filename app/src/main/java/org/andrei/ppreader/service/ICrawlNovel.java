@@ -5,14 +5,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
 
 /**
  * Created by andrei on 2018/9/11.
  */
 
 public interface ICrawlNovel {
-    public Observable<PPNovel> search(String name);
-    public Observable<CrawlChapterResult> fetchChapters( PPNovel novel);
-    public Observable<CrawlTextResult> fetchNovelText(String novelId, String chapterUrl);
+    public int search(final String name,ObservableEmitter<PPNovel> e);
+    public int fetchChapters( final PPNovel novel, CrawlChapterResult ret);
+    public int fetchNovelText(final String novelId, final String chapterUrl,CrawlTextResult ret);
+    public String getName();
 }
 

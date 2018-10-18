@@ -2,6 +2,8 @@ package org.andrei.ppreader.service.engines;
 
 import org.andrei.ppreader.R;
 import org.andrei.ppreader.service.CrawlChapterResult;
+import org.andrei.ppreader.service.CrawlNovel;
+import org.andrei.ppreader.service.CrawlNovelError;
 import org.andrei.ppreader.service.CrawlNovelThrowable;
 import org.andrei.ppreader.service.CrawlTextResult;
 import org.andrei.ppreader.service.ICrawlNovel;
@@ -21,115 +23,83 @@ import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.schedulers.Schedulers;
 
 public class Crawl88dusNovel implements ICrawlNovel {
-    @Override
-    public Observable<PPNovel> search(final String name) {
-        return Observable.create(new ObservableOnSubscribe<PPNovel>() {
-            @Override
-            public void subscribe(ObservableEmitter<PPNovel> e) throws Exception {
-                try {
-                    String url = "https://so.88dus.com/search/so.php?search_field=0&q=" + name;
-                    Document doc = Jsoup.connect(url).timeout(18000).get();
-                    Elements els = doc.getElementsByClass("ops_cover");
-                    if (els.size() == 0) {
-                        Throwable err = new Throwable(new Integer(R.string.err_not_found).toString());
-                        e.onError(err);
-                        return;
-                    }
-                    Elements items = els.get(0).getElementsByClass("block");
-                    if (items.size() == 0) {
-                        Throwable err = new Throwable(new Integer(R.string.err_not_found).toString());
-                        e.onError(err);
-                        return;
-                    }
 
-                    boolean isFetched = false;
-                    for (Element item : items) {
-                        PPNovel novel = new PPNovel();
-                        if (fetchNovel(item, novel)) {
-                            isFetched = true;
-                            e.onNext(novel);
-                            Thread.sleep(500);
-                        }
-                    }
-                    if (!isFetched) {
-                        Throwable err = new Throwable(new Integer(R.string.err_not_found).toString());
-                        e.onError(err);
-                    }
-                    else{
-                        e.onComplete();
-                    }
-                } catch (Exception exception) {
-                    if (!e.isDisposed()) {
-                        Integer i = R.string.err_network;
-                        Throwable err = new Throwable(i.toString());
-                        e.onError(err);
-                    }
-                }
-            }
-        }).subscribeOn(Schedulers.io());
+    @Override
+    public String getName(){
+        return "88dus";
     }
 
     @Override
-    public Observable<CrawlChapterResult> fetchChapters(final PPNovel novel) {
-        return Observable.create(new ObservableOnSubscribe<CrawlChapterResult>() {
-            @Override
-            public void subscribe(ObservableEmitter<CrawlChapterResult> e) throws Exception {
-                CrawlChapterResult ret = new CrawlChapterResult();
-                ret.chapterUrl = novel.chapterUrl;
-                boolean bRet = fetchChaptersInner(novel.chapterUrl,ret.chapters,null);
-                if(bRet){
-                    e.onNext(ret);
-                    e.onComplete();
-                }
-                else{
-                    if(!e.isDisposed()){
-                        Throwable err = new Throwable();
-                        e.onError(err);
-                    }
-                }
+    public int search(final String name,ObservableEmitter<PPNovel> e) {
+        String url = "https://so.88dus.com/search/so.php?search_field=0&q=" + name;
+        Document doc = null;
+        try {
+            doc = Jsoup.connect(url).timeout(18000).get();
+        } catch (IOException e1) {
+            return CrawlNovelError.ERR_NETWORK;
+        }
+        Elements els = doc.getElementsByClass("ops_cover");
+        if (els.size() == 0) {
+            return CrawlNovelError.ERR_NONE_FETCHED;
+        }
+        Elements items = els.get(0).getElementsByClass("block");
+        if (items.size() == 0) {
+            return  CrawlNovelError.ERR_NONE_FETCHED;
+        }
+
+        boolean isFetched = false;
+        for (Element item : items) {
+            PPNovel novel = new PPNovel();
+            if (fetchNovel(item, novel) == CrawlNovelError.ERR_NONE) {
+                isFetched = true;
+                novel.engineName = getName();
+                e.onNext(novel);
             }
-        }).subscribeOn(Schedulers.io());
+        }
+        if (!isFetched) {
+            return CrawlNovelError.ERR_NONE_FETCHED;
+        }
+
+        return CrawlNovelError.ERR_NONE;
     }
 
     @Override
-    public Observable<CrawlTextResult> fetchNovelText(final String novelId, final String chapterUrl) {
-        return Observable.create(new ObservableOnSubscribe<CrawlTextResult>() {
-            @Override
-            public void subscribe(ObservableEmitter<CrawlTextResult> e) throws Exception {
-                try{
-                    Document doc = Jsoup.connect(chapterUrl).timeout(18000).get();
-                    Element item = doc.getElementsByClass("yd_text2").get(0);
-                    String text = item.html();
-                    if(text.isEmpty()){
-                        CrawlNovelThrowable err = new CrawlNovelThrowable();
-                        err.novelUrl = novelId;
-                        err.chapterUrl = chapterUrl;
-                        e.onError(err);
-                        return;
-                    }
-                    text = Utils.adjustText(text);
-
-
-                    CrawlTextResult ret = new CrawlTextResult();
-                    ret.chapterUrl = chapterUrl;
-                    ret.novelUrl = novelId;
-                    ret.text = text;
-                    e.onNext(ret);
-                    e.onComplete();
-                }
-                catch (Exception ex){
-                    if(!e.isDisposed()){
-                        CrawlNovelThrowable err = new CrawlNovelThrowable();
-                        err.novelUrl = novelId;
-                        err.chapterUrl = chapterUrl;
-                        e.onError(err);
-                    }
-                }
-            }
-        }).subscribeOn(Schedulers.io());
+    public int fetchChapters(final PPNovel novel, CrawlChapterResult ret) {
+        ret = new CrawlChapterResult();
+        ret.chapterUrl = novel.chapterUrl;
+        Document doc = null;
+        try {
+            doc = Jsoup.connect(novel.chapterUrl).timeout(18000).get();
+            return  fetchChaptersInner(doc,novel.chapterUrl,ret.chapters);
+        } catch (IOException e) {
+            return CrawlNovelError.ERR_NETWORK;
+        }
     }
 
-    private boolean fetchNovel(final Element element, final PPNovel novel) {
+    @Override
+    public int fetchNovelText(final String novelId, final String chapterUrl,CrawlTextResult ret) {
+        try{
+            Document doc = Jsoup.connect(chapterUrl).timeout(18000).get();
+            Element item = doc.getElementsByClass("yd_text2").get(0);
+            String text = item.html();
+            if(text.isEmpty()){
+                return CrawlNovelError.ERR_NONE_FETCHED;
+            }
+            text = Utils.adjustText(text);
+
+            ret.chapterUrl = chapterUrl;
+            ret.novelUrl = novelId;
+            ret.text = text;
+
+            return CrawlNovelError.ERR_NONE;
+
+        }
+        catch (IOException ex){
+            return CrawlNovelError.ERR_NETWORK;
+        }
+    }
+
+    private int fetchNovel(final Element element, final PPNovel novel) {
         try {
             Element item = element.getElementsByTag("a").get(0);
             novel.chapterUrl = item.attr("href");
@@ -144,52 +114,35 @@ public class Crawl88dusNovel implements ICrawlNovel {
             novel.desc = item.text();
             novel.desc = novel.desc.trim();
             novel.desc = novel.desc.replaceAll("\n", "");
-            Integer type = new Integer(0);
-            if(fetchChaptersInner(novel.chapterUrl,novel.chapters,type)){
-                novel.type = type;
+
+            Document doc = Jsoup.connect(novel.chapterUrl).timeout(18000).get();
+
+            item = doc.getElementsByTag("em").get(1);
+            if(item.text().indexOf("连载") != -1){
+                novel.type =  PPNovel.TYPE_ING;
             }
             else{
-                return false;
+                novel.type = PPNovel.TYPE_OVER;
             }
-        } catch (Exception ex) {
-            return false;
+            return  fetchChaptersInner(doc,novel.chapterUrl,novel.chapters);
+        } catch (IOException ex) {
+            return CrawlNovelError.ERR_NETWORK;
         }
-        return true;
     }
 
-    private boolean fetchChaptersInner(final String url, final ArrayList<PPNovelChapter> chapters, Integer type) {
-        try {
-            Document doc = Jsoup.connect(url).timeout(18000).get();
-            Element item = doc.getElementsByTag("em").get(1);
-
-            if(type != null){
-                if(item.text().indexOf("连载") != -1){
-                    type = PPNovel.TYPE_ING;
-                }
-                else{
-                    type = PPNovel.TYPE_OVER;
-                }
-            }
-
-            Elements mulus = doc.getElementsByClass("mulu");
-            if(mulus == null || mulus.size() == 0){
-                return false;
-            }
-
-            Element root = mulus.get(0);
-            Elements cs = root.getElementsByTag("a");
-            for(Element c :cs){
-                PPNovelChapter chapter = new PPNovelChapter();
-                chapter.url = url + c.attr("href");
-                chapter.name = c.text();
-                chapters.add(chapter);
-            }
-        } catch (IOException e) {
-            return false;
+    private int fetchChaptersInner(final Document doc,final String url, final ArrayList<PPNovelChapter> chapters) {
+        Elements mulus = doc.getElementsByClass("mulu");
+        if(mulus == null || mulus.size() == 0){
+            return CrawlNovelError.ERR_NONE_FETCHED;
         }
-        catch (Exception ex){
-            return false;
+        Element root = mulus.get(0);
+        Elements cs = root.getElementsByTag("a");
+        for(Element c :cs){
+            PPNovelChapter chapter = new PPNovelChapter();
+            chapter.url = url + c.attr("href");
+            chapter.name = c.text();
+            chapters.add(chapter);
         }
-        return true;
+        return CrawlNovelError.ERR_NONE;
     }
 }

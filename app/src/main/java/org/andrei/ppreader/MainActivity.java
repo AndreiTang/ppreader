@@ -22,7 +22,18 @@ import org.andrei.ppreader.ui.fragments.PPNovelCoverFragment;
 import org.andrei.ppreader.ui.fragments.PPNovelMainFragment;
 import org.andrei.ppreader.ui.fragments.PPNovelReaderFragment;
 
+import java.io.Console;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 public class MainActivity extends FragmentActivity {
 
@@ -70,6 +81,51 @@ public class MainActivity extends FragmentActivity {
             }
         }
         changeStatusBarColor();
+
+        //test code
+        Observable.create(new ObservableOnSubscribe<Object>() {
+            @Override
+            public void subscribe(ObservableEmitter<Object> e) throws Exception {
+                try{
+                    while (true){
+                        Thread.sleep(10);
+                        //e.onNext(new Object());
+                    }
+                }
+                catch (Exception ex){
+                    int j = 0;
+                    j++;
+                }
+            }
+        }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<Object>() {
+            Disposable m_d = null;
+            @Override
+            public void onSubscribe(Disposable d) {
+                m_d = d;
+                Timer timer = new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        m_d.dispose();
+                    }
+                }, 3000);
+            }
+
+            @Override
+            public void onNext(Object value) {
+                m_d.dispose();
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
     }
 
     @Override

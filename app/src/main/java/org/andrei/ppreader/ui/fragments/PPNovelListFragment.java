@@ -95,5 +95,15 @@ public class PPNovelListFragment extends Fragment {
 
     }
 
+    @Override
+    public void onDestroyView (){
+        final GridView vp = (GridView) getView().findViewById(R.id.novel_list);
+        PPNovelListAdapter adapter = (PPNovelListAdapter)vp.getAdapter();
+        if(adapter != null){
+            adapter.disposable();
+        }
+        super.onDestroyView();
+    }
+
 
 }

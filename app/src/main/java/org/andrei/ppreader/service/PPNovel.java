@@ -21,7 +21,7 @@ public class PPNovel implements Serializable{
     private static final long serialVersionUID = 5160714128467001373L;
 
     @Expose
-    public int engineIndex = 0;
+    public String engineName = "";
     @Expose
     public String chapterUrl = "";
     @Expose

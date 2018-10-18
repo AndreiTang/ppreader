@@ -240,6 +240,7 @@ public class PPNovelReaderPageManager {
             @Override
             public void onError(Throwable e) {
                 if(m_d != null && m_d.isDisposed()){
+                    m_bRunning = false;
                     return;
                 }
                 fetchChapterTextProc();

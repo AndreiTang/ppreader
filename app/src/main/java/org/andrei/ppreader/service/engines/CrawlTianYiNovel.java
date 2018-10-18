@@ -2,6 +2,9 @@ package org.andrei.ppreader.service.engines;
 
 import org.andrei.ppreader.R;
 import org.andrei.ppreader.service.CrawlChapterResult;
+import org.andrei.ppreader.service.CrawlNovel;
+import org.andrei.ppreader.service.CrawlNovelError;
+import org.andrei.ppreader.service.CrawlNovelService;
 import org.andrei.ppreader.service.CrawlNovelThrowable;
 import org.andrei.ppreader.service.CrawlTextResult;
 import org.andrei.ppreader.service.ICrawlNovel;
@@ -12,6 +15,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import io.reactivex.Observable;
@@ -21,114 +25,81 @@ import io.reactivex.schedulers.Schedulers;
 
 public class CrawlTianYiNovel implements ICrawlNovel {
     @Override
-    public Observable<PPNovel> search(final String name) {
-        return Observable.create(new ObservableOnSubscribe<PPNovel>() {
-            @Override
-            public void subscribe(ObservableEmitter<PPNovel> e) throws Exception {
-                try{
-                    String url = "https://www.tywx.la/searchbook.php?keyword=" + name;
-                    Document doc = Jsoup.connect(url).timeout(60000).get();
-                    Elements root = doc.getElementsByAttributeValue("id","alistbox");
-                    if(root == null || root.size() == 0){
-                        Integer i = R.string.err_not_found;
-                        Throwable err = new Throwable(i.toString());
-                        e.onError(err);
-                        return;
-                    }
-                    boolean bFetch = false;
-                    for(int i = 0 ; i <root.size(); i++){
-                        Element item = root.get(i);
-                        PPNovel novel = new PPNovel();
-                        boolean bRet = fetchNovel(item,novel);
-                        if(bRet){
-                            bFetch = true;
-                            e.onNext(novel);
-                            Thread.sleep(500);
-                        }
-                    }
-                    if(!bFetch){
-                        Integer i = R.string.err_not_found;
-                        Throwable err = new Throwable(i.toString());
-                        e.onError(err);
-                        return;
-                    }
-                    else{
-                        e.onComplete();
-                    }
-                }
-                catch(Exception ex){
-                    if(!e.isDisposed()){
-                        Integer i = R.string.err_network;
-                        Throwable err = new Throwable(i.toString());
-                        e.onError(err);
-                    }
-                }
-
+    public int search(final String name,ObservableEmitter<PPNovel> e) {
+        try{
+            String url = "https://www.tywx.la/searchbook.php?keyword=" + name;
+            Document doc = Jsoup.connect(url).timeout(60000).get();
+            Elements root = doc.getElementsByAttributeValue("id","alistbox");
+            if(root == null || root.size() == 0){
+                return CrawlNovelError.ERR_NONE_FETCHED;
             }
-        }).subscribeOn(Schedulers.io());
+            boolean bFetch = false;
+            for(int i = 0 ; i <root.size(); i++){
+                Element item = root.get(i);
+                PPNovel novel = new PPNovel();
+                if(fetchNovel(item,novel) == CrawlNovelError.ERR_NONE){
+                    bFetch = true;
+                    novel.engineName = getName();
+                    e.onNext(novel);
+                }
+            }
+            if(!bFetch){
+                return CrawlNovelError.ERR_NONE_FETCHED;
+            }
+            else{
+               return CrawlNovelError.ERR_NONE;
+            }
+        }
+        catch(IOException ex){
+           return CrawlNovelError.ERR_NETWORK;
+        }
+        catch (Exception ex){
+            return CrawlNovelError.ERR_NONE_FETCHED;
+        }
     }
 
     @Override
-    public Observable<CrawlChapterResult> fetchChapters(final PPNovel novel) {
-        return Observable.create(new ObservableOnSubscribe<CrawlChapterResult>() {
-            @Override
-            public void subscribe(ObservableEmitter<CrawlChapterResult> e) throws Exception {
-                CrawlChapterResult ret = new CrawlChapterResult();
-                ret.chapterUrl = novel.chapterUrl;
-                boolean bRet = fetchChaptersInner(novel.chapterUrl,ret.chapters,null);
-                if(bRet){
-                    e.onNext(ret);
-                    e.onComplete();
-                }
-                else{
-                    Throwable err = new Throwable();
-                    e.onError(err);
-
-                }
-            }
-        }).subscribeOn(Schedulers.io());
+    public int fetchChapters(final PPNovel novel,CrawlChapterResult ret) {
+        ret.chapterUrl = novel.chapterUrl;
+        try {
+            Document doc = Jsoup.connect(novel.chapterUrl).timeout(60000).get();
+            return fetchChaptersInner(doc,ret.chapters);
+        } catch (IOException e) {
+            return CrawlNovelError.ERR_NETWORK;
+        }
     }
 
     @Override
-    public Observable<CrawlTextResult> fetchNovelText(final String novelId,final String chapterUrl) {
-        return Observable.create(new ObservableOnSubscribe<CrawlTextResult>() {
-            @Override
-            public void subscribe(ObservableEmitter<CrawlTextResult> e) throws Exception {
-                try{
-                    Document doc = Jsoup.connect(chapterUrl).timeout(60000).get();
-                    Element item = doc.getElementById("content");
-                    String text = item.html();
-                    if(text.isEmpty()){
-                        CrawlNovelThrowable err = new CrawlNovelThrowable();
-                        err.novelUrl = novelId;
-                        err.chapterUrl = chapterUrl;
-                        e.onError(err);
-                        return;
-                    }
-                    text = Utils.adjustText(text);
-//                    text = text.replaceAll("&nbsp;","");
-//                    text = text.replaceAll("<br /><br />","\n");
-
-                    CrawlTextResult ret = new CrawlTextResult();
-                    ret.chapterUrl = chapterUrl;
-                    ret.novelUrl = novelId;
-                    ret.text = text;
-                    e.onNext(ret);
-                    e.onComplete();
-                }
-                catch (Exception ex){
-                    if(!e.isDisposed()){
-                        CrawlNovelThrowable err = new CrawlNovelThrowable();
-                        err.novelUrl = novelId;
-                        err.chapterUrl = chapterUrl;
-                        e.onError(err);
-                    }
-                }
+    public int fetchNovelText(final String novelId,final String chapterUrl, CrawlTextResult ret) {
+        try{
+            Document doc = Jsoup.connect(chapterUrl).timeout(60000).get();
+            Element item = doc.getElementById("content");
+            String text = item.html();
+            if(text.isEmpty()){
+                return CrawlNovelError.ERR_NONE_FETCHED;
             }
-        }).subscribeOn(Schedulers.io());
+            text = Utils.adjustText(text);
+
+            ret.chapterUrl = chapterUrl;
+            ret.novelUrl = novelId;
+            ret.text = text;
+
+            return CrawlNovelError.ERR_NONE;
+        }
+        catch (IOException e){
+            return CrawlNovelError.ERR_NETWORK;
+        }
+        catch (Exception ex){
+            return CrawlNovelError.ERR_NONE_FETCHED;
+        }
     }
 
-    private boolean fetchNovel(final Element element, final PPNovel novel){
+    @Override
+    public String getName() {
+        return "tianyi";
+    }
+
+    private int fetchNovel(final Element element, final PPNovel novel){
         try{
             Element item = element.getElementsByTag("img").get(0);
             novel.imgUrl = "https://www.tywx.la" + item.attr("src");
@@ -141,41 +112,39 @@ public class CrawlTianYiNovel implements ICrawlNovel {
             item = element.getElementsByClass("intro").get(0);
             novel.desc = item.text();
             novel.desc = novel.desc.replaceAll(" ","");
-            Integer type = new Integer(0);
-            boolean bRet = fetchChaptersInner(novel.chapterUrl,novel.chapters,type);
-            if(!bRet)
-                return false;
-            novel.type = type;
-        }catch(Exception ex){
-            return false;
-        }
 
-        return true;
-    }
+            Document doc = Jsoup.connect(novel.chapterUrl).timeout(60000).get();
 
-    private boolean fetchChaptersInner(final String url, final ArrayList<PPNovelChapter> chapters, Integer type){
-        try{
-            Document doc = Jsoup.connect(url).timeout(60000).get();
-            if(type != null){
-                Element item = doc.getElementsByClass("ui_tb1").get(0);
-                Elements tds = item.getElementsByTag("td");
-                for(int i = 0 ; i <tds.size(); i++){
-                    Element it = tds.get(i);
-                    Elements bs = it.getElementsByTag("b");
-                    if(bs.size() >0 && bs.get(0).text().indexOf("小说分类") != -1){
-                        if(it.text().indexOf("连载") != -1){
-                            type = PPNovel.TYPE_ING;
-                        }
-                        else{
-                            type = PPNovel.TYPE_OVER;
-                        }
-                        break;
+            item = doc.getElementsByClass("ui_tb1").get(0);
+            Elements tds = item.getElementsByTag("td");
+            for(int i = 0 ; i <tds.size(); i++){
+                Element it = tds.get(i);
+                Elements bs = it.getElementsByTag("b");
+                if(bs.size() >0 && bs.get(0).text().indexOf("小说分类") != -1){
+                    if(it.text().indexOf("连载") != -1){
+                        novel.type = PPNovel.TYPE_ING;
                     }
+                    else{
+                        novel.type = PPNovel.TYPE_OVER;
+                    }
+                    break;
                 }
             }
+
+            return fetchChaptersInner(doc,novel.chapters);
+        }catch (IOException iex){
+            return CrawlNovelError.ERR_NETWORK;
+        }
+        catch(Exception ex){
+            return CrawlNovelError.ERR_NONE_FETCHED;
+        }
+    }
+
+    private int fetchChaptersInner(final Document doc, final ArrayList<PPNovelChapter> chapters){
+        try{
             Elements cs = doc.getElementsByClass("chapterlist");
             if(cs.size() <= 1){
-                return false;
+                return CrawlNovelError.ERR_NONE_FETCHED;
             }
             for(int i = 1 ; i < cs.size() ; i++){
                 Element item = cs.get(i);
@@ -194,14 +163,15 @@ public class CrawlTianYiNovel implements ICrawlNovel {
             }
 
             if(chapters.size() == 0){
-                return false;
+                return CrawlNovelError.ERR_NONE_FETCHED;
             }
 
         }
         catch(Exception ex){
-            return false;
+            return CrawlNovelError.ERR_NONE_FETCHED;
         }
 
-        return true;
+        return CrawlNovelError.ERR_NONE;
+
     }
 }

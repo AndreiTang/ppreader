@@ -25,119 +25,69 @@ import io.reactivex.schedulers.Schedulers;
 public class CrawlNovel implements ICrawlNovel {
 
     @Override
-    public Observable<PPNovel> search(final String name) {
+    public int search(final String name,ObservableEmitter<PPNovel> e) {
 
         String search[] = name.split("#");
         ArrayList<ICrawlNovel> engines = new ArrayList<ICrawlNovel>();
-        String searchName;
         if(search[0].compareTo("0") == 0){
             engines.add(m_s_crawlNovelEngines.get(0));
-            searchName = search[1];
         }
         else if(search[0].compareTo("1") == 0){
             engines.add(m_s_crawlNovelEngines.get(1));
-            searchName = search[1];
         }
         else{
             engines.addAll(m_s_crawlNovelEngines);
-            searchName = name;
         }
 
-        //cancel the last searching.
-        if (m_searchDisposable != null) {
-            m_searchDisposable.dispose();
-            m_searchDisposable = null;
+        int ret = CrawlNovelError.ERR_NONE;
+        for(int i = 0 ; i < engines.size(); i++){
+            ICrawlNovel crawlNovel = engines.get(i);
+            ret = crawlNovel.search(name,e);
+            if(ret == CrawlNovelError.ERR_NONE){
+                break;
+            }
+            else if(ret == CrawlNovelError.ERR_NETWORK){
+                break;
+            }
         }
-        final String sName = searchName;
-        final ArrayList<ICrawlNovel> crawlNovels = engines;
-        return Observable.create(new ObservableOnSubscribe<PPNovel>() {
-            @Override
-            public void subscribe(ObservableEmitter<PPNovel> e) throws Exception {
-                searchProc(sName, crawlNovels, e);
-            }
-        }).doOnError(new Consumer<Throwable>() {
-            @Override
-            public void accept(Throwable throwable) throws Exception {
-                if (m_searchDisposable != null) {
-                    m_searchDisposable = null;
-                }
-            }
-        }).doOnComplete(new Action() {
-            @Override
-            public void run() throws Exception {
-                if (m_searchDisposable != null) {
-                    m_searchDisposable = null;
-                }
-            }
-        }).subscribeOn(Schedulers.io());
+
+        return ret;
     }
 
     @Override
-    public Observable<CrawlChapterResult> fetchChapters(final PPNovel novel) {
+    public int fetchChapters(final PPNovel novel,CrawlChapterResult ret) {
         ICrawlNovel crawlNovels = m_s_crawlNovelEngines.get(m_currEngineIndex);
-        return crawlNovels.fetchChapters(novel);
+        return crawlNovels.fetchChapters(novel,ret);
     }
 
     @Override
-    public Observable<CrawlTextResult> fetchNovelText(final String novelId, final String chapterUrl) {
+    public int fetchNovelText(final String novelId, final String chapterUrl,CrawlTextResult ret) {
         ICrawlNovel crawlNovels = m_s_crawlNovelEngines.get(m_currEngineIndex);
-        return crawlNovels.fetchNovelText(novelId, chapterUrl);
+        return crawlNovels.fetchNovelText(novelId, chapterUrl,ret);
+    }
+
+    @Override
+    public String getName() {
+        return "crawlnovel";
     }
 
     protected CrawlNovel() {
     }
 
 
-    private void searchProc(final String name, final ArrayList<ICrawlNovel> crawlNovels, final ObservableEmitter<PPNovel> emitter) {
-        m_searchDisposable = null;
-        if (crawlNovels.size() == 0) {
-            return;
+    public void setCurrentCrawlNovelEngine(final String engineName) {
+        m_currEngineIndex = 0;
+        for(int i = 0 ; i < m_s_crawlNovelEngines.size(); i ++){
+            ICrawlNovel crawlNovel = m_s_crawlNovelEngines.get(i);
+            if(crawlNovel.getName().compareTo(engineName) == 0){
+                m_currEngineIndex = i;
+                break;
+            }
         }
-
-        ICrawlNovel crawlNovel = crawlNovels.remove(0);
-        final int index = m_s_crawlNovelEngines.indexOf(crawlNovel);
-        crawlNovel.search(name).subscribeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<PPNovel>() {
-
-            Disposable m_disposable = null;
-            @Override
-            public void onSubscribe(Disposable d) {
-                m_disposable = d;
-                m_searchDisposable = d;
-            }
-
-            @Override
-            public void onNext(PPNovel value) {
-                value.engineIndex = index;
-                emitter.onNext(value);
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                if(m_disposable.isDisposed()){
-                    return;
-                }
-                if (crawlNovels.size() == 0) {
-                    Throwable err = new Throwable(name);
-                    emitter.onError(err);
-                } else {
-                    searchProc(name, crawlNovels, emitter);
-                }
-            }
-
-            @Override
-            public void onComplete() {
-                emitter.onComplete();
-            }
-        });
-    }
-
-    public void setCurrentCrawlNovelEngine(int index) {
-        m_currEngineIndex = index;
     }
 
     private static ArrayList<ICrawlNovel> m_s_crawlNovelEngines = new ArrayList<ICrawlNovel>();
     private int m_currEngineIndex = 0;
-    volatile Disposable m_searchDisposable = null;
 
     static {
         ICrawlNovel crawlNovel = new Crawl88dusNovel();

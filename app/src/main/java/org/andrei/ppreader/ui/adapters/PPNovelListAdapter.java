@@ -78,6 +78,13 @@ public class PPNovelListAdapter extends BaseAdapter{
         return view;
     }
 
+    public void disposable(){
+        if(m_disposable != null && !m_disposable.isDisposed()){
+            m_disposable.dispose();
+        }
+        m_disposable = null;
+    }
+
     private View createView(int i){
         View view = m_parent.getLayoutInflater().inflate(R.layout.view_ppnovel_list,null);
         final View v = view;
@@ -170,9 +177,12 @@ public class PPNovelListAdapter extends BaseAdapter{
         final PPNovelListAdapter that = this;
         final PPNovel novel =   checkList.remove(0);
         crawlNovel.fetchChapters(novel).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<CrawlChapterResult>() {
+
+            private Disposable m_d = null;
             @Override
             public void onSubscribe(Disposable d) {
-
+                m_disposable = d;
+                m_d = d;
             }
 
             @Override
@@ -200,11 +210,16 @@ public class PPNovelListAdapter extends BaseAdapter{
 
             @Override
             public void onError(Throwable e) {
+                m_disposable = null;
+                if(m_d.isDisposed()){
+                    return;
+                }
                 checkNovels(checkList,crawlNovel);
             }
 
             @Override
             public void onComplete() {
+                m_disposable = null;
                 checkNovels(checkList,crawlNovel);
             }
         });
@@ -212,4 +227,5 @@ public class PPNovelListAdapter extends BaseAdapter{
     }
 
     private Fragment m_parent;
+    private Disposable m_disposable = null;
 }
