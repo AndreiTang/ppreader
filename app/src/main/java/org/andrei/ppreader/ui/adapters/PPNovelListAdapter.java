@@ -5,10 +5,8 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Adapter;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -19,8 +17,9 @@ import com.jakewharton.rxbinding2.view.RxView;
 
 import org.andrei.ppreader.R;
 import org.andrei.ppreader.service.CrawlChapterResult;
-import org.andrei.ppreader.service.CrawlNovel;
+import org.andrei.ppreader.service.CrawlNovelError;
 import org.andrei.ppreader.service.CrawlNovelService;
+import org.andrei.ppreader.service.ICrawlNovel;
 import org.andrei.ppreader.service.PPNovel;
 import org.andrei.ppreader.ui.fragments.PPNovelReaderFragment;
 
@@ -29,10 +28,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
 
-import io.reactivex.Observer;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 
 public class PPNovelListAdapter extends BaseAdapter{
 
@@ -130,14 +132,13 @@ public class PPNovelListAdapter extends BaseAdapter{
     }
 
     private void initialize(){
-        CrawlNovel crawlNovel = CrawlNovelService .instance().builder();
         ArrayList<PPNovel> checkList = new ArrayList<PPNovel>();
         for(PPNovel novel: CrawlNovelService.instance().getPPNovels()){
             if(novel.status == PPNovel.STATUS_UNCHECKED){
                 checkList.add(novel);
             }
         }
-        checkNovels(checkList, crawlNovel);
+        scanNovels(checkList);
     }
 
     private void removeItem(final int pos,String name){
@@ -170,60 +171,60 @@ public class PPNovelListAdapter extends BaseAdapter{
         m_parent.getActivity().getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,fragment,PPNovelReaderFragment.TAG).commit();
     }
 
-    private void checkNovels(final ArrayList<PPNovel> checkList, final CrawlNovel crawlNovel){
-        if(checkList.size() == 0){
+
+
+    private void scanNovels(final ArrayList<PPNovel> novels){
+        if(novels.size() == 0){
             return;
         }
+
         final PPNovelListAdapter that = this;
-        final PPNovel novel =   checkList.remove(0);
-        crawlNovel.fetchChapters(novel).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<CrawlChapterResult>() {
-
-            private Disposable m_d = null;
+        m_disposable = Observable.create(new ObservableOnSubscribe<PPNovel>() {
             @Override
-            public void onSubscribe(Disposable d) {
-                m_disposable = d;
-                m_d = d;
-            }
+            public void subscribe(ObservableEmitter<PPNovel> e) throws Exception{
+                try{
+                    for(PPNovel novel: novels){
+                        ICrawlNovel crawlNovel = CrawlNovelService.instance().builder(novel.engineName);
+                        if(crawlNovel == null){
+                            continue;
+                        }
 
-            @Override
-            public void onNext(CrawlChapterResult value) {
-                ArrayList<PPNovel> novels = CrawlNovelService.instance().getPPNovels();
-                for(PPNovel item : novels){
-                    if(item.chapterUrl.compareTo(value.chapterUrl) == 0){
-                        if( item.chapters.size() <value.chapters.size()){
-                            //there maybe some problems in the special case.
-                            for(int i = item.chapters.size() ; i < value.chapters.size() ; i++){
-                                item.chapters.add(value.chapters.get(i));
+                        CrawlChapterResult crawlChapterResult = new CrawlChapterResult();
+                        int ret = crawlNovel.fetchChapters(novel,crawlChapterResult);
+                        if(ret == CrawlNovelError.ERR_NONE){
+                            if(novel.chapters.size() < crawlChapterResult.chapters.size()){
+                                //there maybe some problems in the special case for tianyi engine
+                                for(int i = novel.chapters.size() ; i < crawlChapterResult.chapters.size() ; i++){
+                                    novel.chapters.add(crawlChapterResult.chapters.get(i));
+                                }
+                                novel.status = PPNovel.STATUS_CHECKED;
+                                CrawlNovelService.instance().saveNovel(m_parent.getActivity().getApplicationContext().getFilesDir().getAbsolutePath(),novel);
                             }
-                            item.status = PPNovel.STATUS_CHECKED;
-                            CrawlNovelService.instance().saveNovel(m_parent.getActivity().getApplicationContext().getFilesDir().getAbsolutePath(),item);
+                            else{
+                                //it mean the red spot will not show , due to none of new chapters
+                                novel.status = PPNovel.STATUS_CONFIRMED;
+                            }
+                            that.notifyDataSetChanged();
                         }
-                        else{
-                            //it mean the red spot will not show , due to none of new chapters
-                            item.status = PPNovel.STATUS_CONFIRMED;
-                        }
-                        that.notifyDataSetChanged();
-                        break;
+
+                    }
+                    e.onComplete();
+                    m_disposable = null;
+                }
+                catch(Exception ex){
+                    if(e.isDisposed()){
+                        e.onComplete();
+                        m_disposable = null;
                     }
                 }
-            }
 
-            @Override
-            public void onError(Throwable e) {
-                m_disposable = null;
-                if(m_d.isDisposed()){
-                    return;
-                }
-                checkNovels(checkList,crawlNovel);
             }
-
+        }).observeOn(Schedulers.io()).subscribeOn(AndroidSchedulers.mainThread()).subscribe(new Consumer<PPNovel>() {
             @Override
-            public void onComplete() {
-                m_disposable = null;
-                checkNovels(checkList,crawlNovel);
+            public void accept(PPNovel novel) throws Exception {
+
             }
         });
-
     }
 
     private Fragment m_parent;

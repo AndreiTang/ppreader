@@ -8,11 +8,13 @@ import android.text.SpannableStringBuilder;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.TextView;
 
 import com.jakewharton.rxbinding2.view.RxView;
 
 import org.andrei.ppreader.R;
+import org.andrei.ppreader.service.PPNovelChapter;
 import org.andrei.ppreader.ui.helper.PPNovelLineSpan;
 import org.andrei.ppreader.ui.helper.PPNovelTitleCenterBoldSpan;
 import org.andrei.ppreader.ui.helper.PPNovelReaderPageManager;
@@ -21,6 +23,8 @@ import org.andrei.ppreader.ui.helper.PPNovelTextPage;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 
 
@@ -30,6 +34,7 @@ public class PPNovelReaderAdapter extends PagerAdapter {
     public PPNovelReaderAdapter(@NonNull Fragment parent, @NonNull PPNovelReaderPageManager pageMgr) {
         m_parent = parent;
         m_pageMgr = pageMgr;
+        init();
     }
 
 
@@ -79,7 +84,31 @@ public class PPNovelReaderAdapter extends PagerAdapter {
         m_views.remove((View) object);
     }
 
-    public void update(int pos) {
+    public void selectCurrentItem(int position){
+        PPNovelTextPage item = m_pageMgr.getItem(position);
+        assert (item != null);
+        if (item.status == PPNovelTextPage.STATUS_INIT) {
+            item.status = PPNovelTextPage.STATUS_LOADING;
+            m_pageMgr.fetchChapterText(item);
+        } else if (item.status == PPNovelTextPage.STATUS_LOADED) {
+            item.status = PPNovelTextPage.STATUS_OK;
+            update(position);
+
+
+        } else {
+            update(position);
+        }
+        m_currIndex = position;
+    }
+
+    public void clear(){
+        if(m_disposable != null){
+            m_disposable.dispose();
+        }
+        m_disposable = null;
+    }
+
+    private void update(int pos) {
         PPNovelTextPage page = m_pageMgr.getItem(pos);
         if(page == null){
             return;
@@ -96,6 +125,19 @@ public class PPNovelReaderAdapter extends PagerAdapter {
                 return;
             }
         }
+    }
+
+    private void init(){
+        m_disposable = m_pageMgr.fetchChapterTextObserve().observeOn(AndroidSchedulers.mainThread()).subscribe(new Consumer<Integer>() {
+            @Override
+            public void accept(Integer index) throws Exception {
+                PPNovelTextPage page = m_pageMgr.getItem(index);
+                if((page.status == PPNovelTextPage.STATUS_LOADED && m_currIndex == index) ||
+                        page.status == PPNovelTextPage.STATUS_FAIL){
+                    update(index);
+                }
+            }
+        });
     }
 
     private void updateView(View v, int position) {
@@ -125,13 +167,56 @@ public class PPNovelReaderAdapter extends PagerAdapter {
         if (page.isSplit) {
            loadPage(page,tv);
         } else {
-            m_pageMgr.divideChapterToPages(tv,pos).subscribe(new Consumer<Integer>() {
-                @Override
-                public void accept(Integer s) throws Exception {
-                    validate(tv,pos,s);
-                }
-            });
+            preloadText(page,tv,pos);
         }
+    }
+
+    private void preloadText(final PPNovelTextPage page, final TextView tv, final int pos){
+
+        final String body = adjustParagraph(page.text);
+        final StringBuilder text = new StringBuilder();
+
+        text.append("J\n");
+        //using dummy title to occupy title place which is just one line.
+        // If the real title is length than the width of textview. it will occupy more than 1 line which will cause error.
+        text.append("This is dummy\n");
+        text.append("J\n");
+        text.append(body);
+        tv.setText(text);
+
+        tv.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                tv.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                int offset = m_pageMgr.splitChapter(tv, page);
+                validate(tv,pos,offset);
+            }
+        });
+
+    }
+
+    private String adjustParagraph(final String text) {
+        StringBuilder newText = new StringBuilder();
+        String paragraphs[] = text.replaceAll("\r", "").split("\n");
+        for (String paragraph : paragraphs) {
+            if (paragraph.length() == 0) {
+                continue;
+            }
+            //there are two space at the beginning of each paragraph.
+            char space = 12288;
+            newText.append(space);
+            newText.append(space);
+
+            //Except the beginning, all the space are removed
+            paragraph = paragraph.replaceAll("\\s*", "");
+            newText.append(paragraph);
+
+            //there is a '\n' at the end of each line
+            newText.append("\n");
+        }
+        //remove the '\n' at the end. Or textview will a new empty.
+        newText.deleteCharAt(newText.length() - 1);
+        return newText.toString();
     }
 
     private void validate(final TextView tv, final int curPos,final int offset){
@@ -207,4 +292,7 @@ public class PPNovelReaderAdapter extends PagerAdapter {
     private boolean m_bNeedUpdate = false;
     private ArrayList<View> m_views = new ArrayList<View>();
     final private PPNovelReaderPageManager m_pageMgr;;
+    private int m_currIndex = 0;
+    private Disposable m_disposable = null;
+
 }

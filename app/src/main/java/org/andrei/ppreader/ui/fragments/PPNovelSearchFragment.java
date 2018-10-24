@@ -18,16 +18,22 @@ import com.jakewharton.rxbinding2.view.RxView;
 
 import org.andrei.ppreader.R;
 import org.andrei.ppreader.service.CrawlNovel;
+import org.andrei.ppreader.service.CrawlNovelError;
 import org.andrei.ppreader.service.CrawlNovelService;
 import org.andrei.ppreader.service.PPNovel;
 import org.andrei.ppreader.ui.adapters.PPNovelSearchAdapter;
 
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.Observer;
+import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -141,7 +147,7 @@ public class PPNovelSearchFragment extends Fragment {
         //notifyDataSetChanged();
     }
 
-    private void search(String name) {
+    private void search(final String name) {
         reset();
 
         m_isLoading = true;
@@ -156,7 +162,37 @@ public class PPNovelSearchFragment extends Fragment {
         showLoadingMask(true);
         final ListView lv = (ListView) getView().findViewById(R.id.novel_search_ret_list);
         final PPNovelSearchAdapter adapter = (PPNovelSearchAdapter) getAdapter();
-        m_crawlNovel.search(name).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<PPNovel>() {
+
+        Observable.create(new ObservableOnSubscribe<PPNovel>() {
+            @Override
+            public void subscribe(ObservableEmitter<PPNovel> e) throws Exception {
+                try{
+                    int ret = m_crawlNovel.search(name,e);
+                    if(ret == CrawlNovelError.ERR_NONE_FETCHED){
+                        Integer i = R.string.err_not_found;
+                        Throwable err = new Throwable(i.toString());
+                        e.onError(err);
+                    }
+                    else if(ret == CrawlNovelError.ERR_NETWORK){
+                        Integer i = R.string.err_network;
+                        Throwable err = new Throwable(i.toString());
+                        e.onError(err);
+                    }
+                    else{
+                        e.onComplete();
+                    }
+                    m_disposable = null;
+
+                }catch(Exception ex){
+                    if(!m_disposable.isDisposed()){
+                        Integer i = R.string.err_network;
+                        Throwable err = new Throwable(i.toString());
+                        e.onError(err);
+                        m_disposable = null;
+                    }
+                }
+            }
+        }).observeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<PPNovel>() {
             @Override
             public void onError(Throwable e) {
                 m_isLoading = false;

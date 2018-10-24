@@ -9,6 +9,7 @@ import android.widget.TextView;
 import org.andrei.ppreader.R;
 import org.andrei.ppreader.service.CrawlChapterResult;
 import org.andrei.ppreader.service.CrawlNovel;
+import org.andrei.ppreader.service.CrawlNovelError;
 import org.andrei.ppreader.service.CrawlNovelService;
 import org.andrei.ppreader.service.CrawlNovelThrowable;
 import org.andrei.ppreader.service.CrawlTextResult;
@@ -22,6 +23,7 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.Observer;
+import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
@@ -31,14 +33,12 @@ import io.reactivex.schedulers.Schedulers;
 
 public class PPNovelReaderPageManager {
 
-    public final static  int VALIDATE= -1;
 
     public PPNovelReaderPageManager(@NonNull final PPNovel novel, int tvHeight) {
         m_tvHeight = tvHeight;
         m_novel = novel;
-        m_crawlNovel = CrawlNovelService.instance().builder(m_novel.engineIndex);
+        m_crawlNovel = CrawlNovelService.instance().builder(m_novel.engineName);
         initializePages(novel);
-        fetchChapters();
     }
 
     public PPNovelTextPage getItem(int pos) {
@@ -72,203 +72,49 @@ public class PPNovelReaderPageManager {
         return m_pages;
     }
 
-    public Observable<Integer> getPPNovelTextPageObservable() {
-        return m_textPageObservable;
-    }
-
-    public Observable<Integer> divideChapterToPages(@NonNull final TextView tv, final int pos) {
-
-        return Observable.create(new ObservableOnSubscribe<Integer>() {
-            @Override
-            public void subscribe(ObservableEmitter<Integer> e) throws Exception {
-
-                final PPNovelTextPage page = m_pages.get(pos);
-                final String body = adjustParagraph(page.text);
-                final StringBuilder text = new StringBuilder();
-
-                text.append("J\n");
-                //using dummy title to occupy title place which is just one line.
-                // If the real title is length than the width of textview. it will occupy more than 1 line which will cause error.
-                text.append("This is dummy\n");
-                text.append("J\n");
-                text.append(body);
-                tv.setText(text);
-
-                final ObservableEmitter<Integer> emit = e;
-                tv.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                    @Override
-                    public void onGlobalLayout() {
-                        tv.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                        int offset = splitChapter(tv, page);
-                        emit.onNext(offset);
-                    }
-                });
-            }
-        });
-    }
-
     public void fetchChapterText(@NonNull final PPNovelTextPage page) {
         PPNovelChapter chapter = m_novel.getPPNovelChapter(page.chapter);
         if (chapter == null) {
             return;
         }
         m_fetchList.add(chapter);
-        if (!m_bRunning) {
-            fetchChapterTextProc();
-        }
     }
 
-    public void disposableFetchText(){
-        if(m_disposable != null){
-            if(!m_disposable.isDisposed()){
-                m_disposable.dispose();
-            }
-            m_disposable = null;
-        }
-
-        if(m_fetchChapterDisposable != null){
-            m_fetchChapterDisposable.dispose();
-            m_fetchChapterDisposable = null;
-        }
-    }
-
-    private void fetchChapters(){
-        m_crawlNovel.fetchChapters(m_novel).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<CrawlChapterResult>() {
+    public Observable<Integer> fetchChapterTextObserve(){
+        return Observable.create(new ObservableOnSubscribe<Integer>() {
             @Override
-            public void onSubscribe(Disposable d) {
-                m_fetchChapterDisposable = d;
-            }
+            public void subscribe(ObservableEmitter<Integer> e) throws Exception {
+                try{
+                    while (true) {
+                        if(m_fetchList.size() == 0){
+                            Thread.sleep(100);
+                            continue;
+                        }
+                        PPNovelChapter chapter = m_fetchList.remove(0);
+                        CrawlTextResult crawlTextResult = new CrawlTextResult();
+                        int ret = m_crawlNovel.fetchNovelText(m_novel.chapterUrl, chapter.url,crawlTextResult);
+                        PPNovelTextPage page = getItem(crawlTextResult.chapterUrl, 0);
+                        int index = getFirstChapterItemPosition(crawlTextResult.chapterUrl);
+                        if(ret == CrawlNovelError.ERR_NONE){
+                            chapter.text = crawlTextResult.text;
+                            page.text = crawlTextResult.text;
+                            page.status = PPNovelTextPage.STATUS_LOADED;
 
-            @Override
-            public void onNext(CrawlChapterResult crawlChapterResult) {
-                if(m_novel.chapters.size() < crawlChapterResult.chapters.size()){
-                    for(int i = m_novel.chapters.size() ; i < crawlChapterResult.chapters.size() ; i ++){
-                        PPNovelChapter item = crawlChapterResult.chapters.get(i);
-                        m_novel.chapters.add(item);
-                        PPNovelTextPage page = new PPNovelTextPage();
-                        page.chapter = item.url;
-                        page.title = item.name;
-                        m_pages.add(page);
-                    }
-                    if(m_textPageObservable.m_observer != null){
-                        m_textPageObservable.m_observer.onNext(VALIDATE);
+                        }
+                        else{
+                            page.status = PPNovelTextPage.STATUS_FAIL;
+                        }
+                        e.onNext(index);
                     }
                 }
-                else{
-                    if(m_textPageObservable.m_observer != null){
-                        m_textPageObservable.m_observer.onNext(VALIDATE);
-                    }
+                catch (Exception ex){
                 }
-            }
 
-            @Override
-            public void onError(Throwable e) {
-                m_fetchChapterDisposable = null;
             }
-
-            @Override
-            public void onComplete() {
-                m_fetchChapterDisposable = null;
-            }
-        });
+        }).observeOn(Schedulers.io());
     }
 
-//    private void fetchChapters(){
-//        m_fetchChapterDisposable = m_crawlNovel.fetchChapters(m_novel).observeOn(Schedulers.io()).subscribe(new Consumer<CrawlChapterResult>() {
-//            @Override
-//            public void accept(CrawlChapterResult crawlChapterResult) throws Exception {
-//                m_fetchChapterDisposable = null;
-//                if(m_novel.chapters.size() < crawlChapterResult.chapters.size()){
-//                    for(int i = m_novel.chapters.size() ; i < crawlChapterResult.chapters.size() ; i ++){
-//                        PPNovelChapter item = crawlChapterResult.chapters.get(i);
-//                        m_novel.chapters.add(item);
-//                        PPNovelTextPage page = new PPNovelTextPage();
-//                        page.chapter = item.url;
-//                        page.title = item.name;
-//                        m_pages.add(page);
-//                    }
-//                    if(m_textPageObservable.m_observer != null){
-//                        m_textPageObservable.m_observer.onNext(VALIDATE);
-//                    }
-//                }
-//                else{
-//                    if(m_textPageObservable.m_observer != null){
-//                        m_textPageObservable.m_observer.onNext(VALIDATE);
-//                    }
-//                }
-//            }
-//        });
-//    }
-
-    private void fetchChapterTextProc() {
-        if (m_fetchList.size() == 0) {
-            return;
-        }
-        m_bRunning = true;
-        PPNovelChapter chapter = m_fetchList.remove(0);
-        m_crawlNovel.fetchNovelText(m_novel.chapterUrl, chapter.url).doFinally(new Action() {
-            @Override
-            public void run() throws Exception {
-                if(m_disposable != null){
-                    m_disposable = null;
-                }
-            }
-        }).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<CrawlTextResult>() {
-
-            Disposable m_d;
-
-            @Override
-            public void onSubscribe(Disposable d) {
-                m_disposable = d;
-                m_d = d;
-            }
-
-            @Override
-            public void onNext(CrawlTextResult value) {
-                PPNovelChapter item = m_novel.getPPNovelChapter(value.chapterUrl);
-                item.text = value.text;
-                PPNovelTextPage page = getItem(value.chapterUrl, 0);
-                assert (page != null);
-                page.text = value.text;
-                page.status = PPNovelTextPage.STATUS_LOADED;
-                int index = getFirstChapterItemPosition(value.chapterUrl);
-                if (m_textPageObservable.m_observer != null) {
-                    m_textPageObservable.m_observer.onNext(index);
-                }
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                if(m_d != null && m_d.isDisposed()){
-                    m_bRunning = false;
-                    return;
-                }
-                fetchChapterTextProc();
-                if (m_fetchList.size() == 0) {
-                    m_bRunning = false;
-                }
-
-                CrawlNovelThrowable err = (CrawlNovelThrowable) e;
-                PPNovelTextPage page = getItem(err.chapterUrl, 0);
-                assert (page != null);
-                page.status = PPNovelTextPage.STATUS_FAIL;
-//                int index = getFirstChapterItemPosition(err.chapterUrl);
-                if (m_textPageObservable.m_observer != null) {
-                    m_textPageObservable.m_observer.onError(e);
-                }
-            }
-
-            @Override
-            public void onComplete() {
-                fetchChapterTextProc();
-                if (m_fetchList.size() == 0) {
-                    m_bRunning = false;
-                }
-            }
-        });
-    }
-
-    private int splitChapter(@NonNull final TextView tv, final PPNovelTextPage page) {
+    public int splitChapter(@NonNull final TextView tv, final PPNovelTextPage page) {
         int pageTextHeight = 0;
         int offset = 0;
         ArrayList<PPNovelTextPage> pages = new ArrayList<PPNovelTextPage>();
@@ -346,6 +192,7 @@ public class PPNovelReaderPageManager {
         return offset;
     }
 
+
     private void initializePages(final PPNovel novel) {
         for (int i = 0; i < novel.chapters.size(); i++) {
             PPNovelChapter chapter = novel.chapters.get(i);
@@ -397,48 +244,9 @@ public class PPNovelReaderPageManager {
         }
     }
 
-    private String adjustParagraph(final String text) {
-        StringBuilder newText = new StringBuilder();
-        String paragraphs[] = text.replaceAll("\r", "").split("\n");
-        for (String paragraph : paragraphs) {
-            if (paragraph.length() == 0) {
-                continue;
-            }
-            //there are two space at the beginning of each paragraph.
-            char space = 12288;
-            newText.append(space);
-            newText.append(space);
-
-            //Except the beginning, all the space are removed
-            paragraph = paragraph.replaceAll("\\s*", "");
-            newText.append(paragraph);
-
-            //there is a '\n' at the end of each line
-            newText.append("\n");
-        }
-        //remove the '\n' at the end. Or textview will a new empty.
-        newText.deleteCharAt(newText.length() - 1);
-        return newText.toString();
-    }
-
-    private class PPNovelTextPageObservable extends Observable<Integer> {
-
-        public Observer<? super Integer> m_observer = null;
-
-        @Override
-        protected void subscribeActual(Observer<? super Integer> observer) {
-            m_observer = observer;
-        }
-    }
-
-    private PPNovelTextPageObservable m_textPageObservable = new PPNovelTextPageObservable();
     private ArrayList<PPNovelTextPage> m_pages = new ArrayList<PPNovelTextPage>();
     private int m_tvHeight = 0;
     private CrawlNovel m_crawlNovel = null;
     private PPNovel m_novel;
     private ArrayList<PPNovelChapter> m_fetchList = new ArrayList<PPNovelChapter>();
-    private boolean m_bRunning = false;
-    private Disposable m_disposable = null;
-    private Disposable m_fetchChapterDisposable = null;
-
 }

@@ -4,4 +4,5 @@ public class CrawlTextResult {
     public String chapterUrl;
     public String text;
     public String novelUrl;
+    public int err;
 }
