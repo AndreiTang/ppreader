@@ -87,7 +87,8 @@ public class PPNovelReaderFragment extends Fragment {
         }
         else{
             if(savedInstanceState != null){
-                m_novel = (PPNovel) savedInstanceState.getSerializable(NOVEL);
+                String id  = savedInstanceState.getString(NOVEL);
+                m_novel = CrawlNovelService.instance().getNovel(id);
             }
         }
 
@@ -138,8 +139,8 @@ public class PPNovelReaderFragment extends Fragment {
 
     @Override
     public void onSaveInstanceState (Bundle outState){
-        outState.putSerializable(NOVEL,m_novel);
         super.onSaveInstanceState(outState);
+        outState.putString(NOVEL,m_novel.chapterUrl);
     }
 
     @Override

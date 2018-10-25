@@ -31,7 +31,7 @@ public class Crawl88dusNovel implements ICrawlNovel {
 
     @Override
     public int search(final String name,ObservableEmitter<PPNovel> e) {
-        String url = "https://so.88dus.com/search/so.php?search_field=0&q=" + name;
+        String url = "https://so.88dush.com/search/so.php?search_field=0&q=" + name;
         Document doc = null;
         try {
             doc = Jsoup.connect(url).timeout(18000).get();

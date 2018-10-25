@@ -192,7 +192,7 @@ public class PPNovelSearchFragment extends Fragment {
                     }
                 }
             }
-        }).observeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<PPNovel>() {
+        }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<PPNovel>() {
             @Override
             public void onError(Throwable e) {
                 m_isLoading = false;

@@ -111,7 +111,7 @@ public class PPNovelReaderPageManager {
                 }
 
             }
-        }).observeOn(Schedulers.io());
+        }).subscribeOn(Schedulers.io());
     }
 
     public int splitChapter(@NonNull final TextView tv, final PPNovelTextPage page) {

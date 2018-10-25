@@ -7,7 +7,6 @@ public class MockData {
     static public PPNovel novel = new PPNovel();
     static {
         novel.desc = "知识就等于力量。所谓神，不过是强大一点的奥术师。带着一大堆知识的夏风穿越而来了。";
-        novel.engineIndex = 0;
         novel.imgUrl = "https://fm.88dus.com/38/38089/38089s.jpg";
         novel.name = "奥术神座";
         novel.author = "爱潜水的乌贼";
