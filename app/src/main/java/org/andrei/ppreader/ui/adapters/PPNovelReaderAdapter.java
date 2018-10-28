@@ -14,6 +14,7 @@ import android.widget.TextView;
 import com.jakewharton.rxbinding2.view.RxView;
 
 import org.andrei.ppreader.R;
+import org.andrei.ppreader.service.PPNovel;
 import org.andrei.ppreader.service.PPNovelChapter;
 import org.andrei.ppreader.ui.helper.PPNovelLineSpan;
 import org.andrei.ppreader.ui.helper.PPNovelTitleCenterBoldSpan;
@@ -134,6 +135,10 @@ public class PPNovelReaderAdapter extends PagerAdapter {
                 PPNovelTextPage page = m_pageMgr.getItem(index);
                 if((page.status == PPNovelTextPage.STATUS_LOADED && m_currIndex == index) ||
                         page.status == PPNovelTextPage.STATUS_FAIL){
+                    //change to OK, it mean the current page can load text to view.
+                    if(page.status == PPNovelTextPage.STATUS_LOADED){
+                        page.status = PPNovelTextPage.STATUS_OK;
+                    }
                     update(index);
                 }
             }
