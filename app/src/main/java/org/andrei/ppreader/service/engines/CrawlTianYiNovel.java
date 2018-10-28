@@ -4,6 +4,7 @@ import org.andrei.ppreader.R;
 import org.andrei.ppreader.service.CrawlChapterResult;
 import org.andrei.ppreader.service.CrawlNovel;
 import org.andrei.ppreader.service.CrawlNovelError;
+import org.andrei.ppreader.service.CrawlNovelResult;
 import org.andrei.ppreader.service.CrawlNovelService;
 import org.andrei.ppreader.service.CrawlNovelThrowable;
 import org.andrei.ppreader.service.CrawlTextResult;
@@ -25,33 +26,45 @@ import io.reactivex.schedulers.Schedulers;
 
 public class CrawlTianYiNovel implements ICrawlNovel {
     @Override
-    public int search(final String name,ObservableEmitter<PPNovel> e) {
+    public int search(final String name, ObservableEmitter<PPNovel> e, CrawlNovelResult ret) {
         try{
             String url = "https://www.tywx.la/searchbook.php?keyword=" + name;
             Document doc = Jsoup.connect(url).timeout(60000).get();
-            Elements root = doc.getElementsByAttributeValue("id","alistbox");
-            if(root == null || root.size() == 0){
-                return CrawlNovelError.ERR_NONE_FETCHED;
-            }
-            boolean bFetch = false;
-            for(int i = 0 ; i <root.size(); i++){
-                Element item = root.get(i);
-                PPNovel novel = new PPNovel();
-                if(fetchNovel(item,novel) == CrawlNovelError.ERR_NONE){
-                    bFetch = true;
-                    novel.engineName = getName();
-                    e.onNext(novel);
+
+            Elements elements = doc.getElementsByClass("pagelink");
+            if(elements.size() == 1){
+                Element pages = elements.first();
+                Elements hrefs = pages.getElementsByTag("a");
+                if(hrefs.size() >0){
+                    for(Element item : hrefs){
+                        if(item.className().compareTo("next") == 0 || item.className().compareTo("ngroup") == 0){
+                            continue;
+                        }
+                        String href = item.attr("href");
+                        ret.pageUrls.add(href);
+                    }
                 }
             }
-            if(!bFetch){
-                return CrawlNovelError.ERR_NONE_FETCHED;
-            }
-            else{
-               return CrawlNovelError.ERR_NONE;
-            }
+            ret.engineName = getName();
+
+            return fetchNovels(doc,e);
         }
         catch(IOException ex){
            return CrawlNovelError.ERR_NETWORK;
+        }
+        catch (Exception ex){
+            return CrawlNovelError.ERR_NONE_FETCHED;
+        }
+    }
+
+    @Override
+    public int fetchNovels(String url, ObservableEmitter<PPNovel> e) {
+        try{
+            Document doc = Jsoup.connect(url).timeout(60000).get();
+            return fetchNovels(doc,e);
+        }
+        catch(IOException ex){
+            return CrawlNovelError.ERR_NETWORK;
         }
         catch (Exception ex){
             return CrawlNovelError.ERR_NONE_FETCHED;
@@ -97,6 +110,36 @@ public class CrawlTianYiNovel implements ICrawlNovel {
     @Override
     public String getName() {
         return "tianyi";
+    }
+
+
+    private int fetchNovels(final Document doc, ObservableEmitter<PPNovel> e){
+        Elements root = doc.getElementsByAttributeValue("id","alistbox");
+        if(root == null || root.size() == 0){
+            return CrawlNovelError.ERR_NONE_FETCHED;
+        }
+        boolean bFetch = false;
+        for(int i = 0 ; i <root.size(); i++){
+            Element item = root.get(i);
+            PPNovel novel = new PPNovel();
+            if(fetchNovel(item,novel) == CrawlNovelError.ERR_NONE){
+                bFetch = true;
+                novel.engineName = getName();
+                e.onNext(novel);
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e1) {
+                e1.printStackTrace();
+                return  CrawlNovelError.ERR_NETWORK;
+            }
+        }
+        if(!bFetch){
+            return CrawlNovelError.ERR_NONE_FETCHED;
+        }
+        else{
+            return CrawlNovelError.ERR_NONE;
+        }
     }
 
     private int fetchNovel(final Element element, final PPNovel novel){

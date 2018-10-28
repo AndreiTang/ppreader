@@ -19,10 +19,13 @@ import com.jakewharton.rxbinding2.view.RxView;
 import org.andrei.ppreader.R;
 import org.andrei.ppreader.service.CrawlNovel;
 import org.andrei.ppreader.service.CrawlNovelError;
+import org.andrei.ppreader.service.CrawlNovelResult;
 import org.andrei.ppreader.service.CrawlNovelService;
+import org.andrei.ppreader.service.ICrawlNovel;
 import org.andrei.ppreader.service.PPNovel;
 import org.andrei.ppreader.ui.adapters.PPNovelSearchAdapter;
 
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
@@ -144,6 +147,7 @@ public class PPNovelSearchFragment extends Fragment {
         if (adapter != null) {
             adapter.reset();
         }
+        m_pageUrls.clear();
         //notifyDataSetChanged();
     }
 
@@ -167,7 +171,8 @@ public class PPNovelSearchFragment extends Fragment {
             @Override
             public void subscribe(ObservableEmitter<PPNovel> e) throws Exception {
                 try{
-                    int ret = m_crawlNovel.search(name,e);
+                    CrawlNovelResult crawlNovelResult = new CrawlNovelResult();
+                    int ret = m_crawlNovel.search(name,e, crawlNovelResult);
                     if(ret == CrawlNovelError.ERR_NONE_FETCHED){
                         Integer i = R.string.err_not_found;
                         Throwable err = new Throwable(i.toString());
@@ -179,6 +184,8 @@ public class PPNovelSearchFragment extends Fragment {
                         e.onError(err);
                     }
                     else{
+                        m_pageUrls = crawlNovelResult.pageUrls;
+                        m_engineName = crawlNovelResult.engineName;
                         e.onComplete();
                     }
                     m_disposable = null;
@@ -224,11 +231,23 @@ public class PPNovelSearchFragment extends Fragment {
             public void onComplete() {
                 m_isLoading = false;
                 ListView lv = (ListView) getView().findViewById(R.id.novel_search_ret_list);
-                if (lv.getFooterViewsCount() == 1) {
+                if (lv.getFooterViewsCount() == 1 && m_pageUrls.size() == 0) {
                     lv.removeFooterView(m_footView);
                 }
             }
         });
+    }
+
+    private void fetchRemainNovels(){
+        ListView lv = (ListView) getView().findViewById(R.id.novel_search_ret_list);
+        if(lv.getLastVisiblePosition() != lv.getAdapter().getCount()){
+            return;
+        }
+        if (m_pageUrls.size() == 0){
+            return;
+        }
+        ICrawlNovel crawlNovel = CrawlNovelService.instance().builder(m_engineName);
+
     }
 
     private void showLoadingMask(boolean isShow) {
@@ -247,9 +266,13 @@ public class PPNovelSearchFragment extends Fragment {
         tx.setText(err);
     }
 
+
+
     private View m_footView = null;
     private boolean m_isLoading = false;
     private CrawlNovel m_crawlNovel = null;
     private Disposable m_disposable;
+    private ArrayList<String> m_pageUrls = new ArrayList<String>();
+    private String m_engineName;
 
 }

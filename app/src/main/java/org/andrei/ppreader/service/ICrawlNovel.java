@@ -12,7 +12,8 @@ import io.reactivex.ObservableEmitter;
  */
 
 public interface ICrawlNovel {
-    public int search(final String name,ObservableEmitter<PPNovel> e);
+    public int search(final String name,ObservableEmitter<PPNovel> e, CrawlNovelResult ret);
+    public int fetchNovels(final String url, ObservableEmitter<PPNovel> e);
     public int fetchChapters( final PPNovel novel, CrawlChapterResult ret);
     public int fetchNovelText(final String novelId, final String chapterUrl,CrawlTextResult ret);
     public String getName();

@@ -4,6 +4,7 @@ import org.andrei.ppreader.R;
 import org.andrei.ppreader.service.CrawlChapterResult;
 import org.andrei.ppreader.service.CrawlNovel;
 import org.andrei.ppreader.service.CrawlNovelError;
+import org.andrei.ppreader.service.CrawlNovelResult;
 import org.andrei.ppreader.service.CrawlNovelThrowable;
 import org.andrei.ppreader.service.CrawlTextResult;
 import org.andrei.ppreader.service.ICrawlNovel;
@@ -24,13 +25,14 @@ import io.reactivex.schedulers.Schedulers;
 
 public class Crawl88dusNovel implements ICrawlNovel {
 
+
     @Override
     public String getName(){
         return "88dus";
     }
 
     @Override
-    public int search(final String name,ObservableEmitter<PPNovel> e) {
+    public int search(final String name, ObservableEmitter<PPNovel> e, CrawlNovelResult ret) {
         String url = "https://so.88dush.com/search/so.php?search_field=0&q=" + name;
         Document doc = null;
         try {
@@ -38,29 +40,36 @@ public class Crawl88dusNovel implements ICrawlNovel {
         } catch (IOException e1) {
             return CrawlNovelError.ERR_NETWORK;
         }
-        Elements els = doc.getElementsByClass("ops_cover");
-        if (els.size() == 0) {
-            return CrawlNovelError.ERR_NONE_FETCHED;
-        }
-        Elements items = els.get(0).getElementsByClass("block");
-        if (items.size() == 0) {
-            return  CrawlNovelError.ERR_NONE_FETCHED;
-        }
 
-        boolean isFetched = false;
-        for (Element item : items) {
-            PPNovel novel = new PPNovel();
-            if (fetchNovel(item, novel) == CrawlNovelError.ERR_NONE) {
-                isFetched = true;
-                novel.engineName = getName();
-                e.onNext(novel);
+        Elements elements = doc.getElementsByClass("ops_page");
+        if(elements.size() == 1){
+            Element pages = elements.first();
+            Elements hrefs = pages.getElementsByTag("a");
+            if(hrefs.size() >0){
+                for(Element item : hrefs){
+                    if(item.className().compareTo("btn_page") == 0){
+                        continue;
+                    }
+                    String href = item.attr("href");
+                    ret.pageUrls.add(href);
+                }
             }
         }
-        if (!isFetched) {
-            return CrawlNovelError.ERR_NONE_FETCHED;
+        ret.engineName = getName();
+
+        return fetchNovels(doc,e);
+    }
+
+    @Override
+    public int fetchNovels(String url, ObservableEmitter<PPNovel> e) {
+        Document doc = null;
+        try {
+            doc = Jsoup.connect(url).timeout(18000).get();
+        } catch (IOException e1) {
+            return CrawlNovelError.ERR_NETWORK;
         }
 
-        return CrawlNovelError.ERR_NONE;
+        return fetchNovels(doc,e);
     }
 
     @Override
@@ -97,6 +106,38 @@ public class Crawl88dusNovel implements ICrawlNovel {
         catch (IOException ex){
             return CrawlNovelError.ERR_NETWORK;
         }
+    }
+
+    private int fetchNovels(Document doc, ObservableEmitter<PPNovel> e){
+        Elements els = doc.getElementsByClass("ops_cover");
+        if (els.size() == 0) {
+            return CrawlNovelError.ERR_NONE_FETCHED;
+        }
+        Elements items = els.get(0).getElementsByClass("block");
+        if (items.size() == 0) {
+            return  CrawlNovelError.ERR_NONE_FETCHED;
+        }
+
+        boolean isFetched = false;
+        for (Element item : items) {
+            PPNovel novel = new PPNovel();
+            if (fetchNovel(item, novel) == CrawlNovelError.ERR_NONE) {
+                isFetched = true;
+                novel.engineName = getName();
+                e.onNext(novel);
+            }
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e1) {
+                e1.printStackTrace();
+                return CrawlNovelError.ERR_NETWORK;
+            }
+        }
+        if (!isFetched) {
+            return CrawlNovelError.ERR_NONE_FETCHED;
+        }
+
+        return CrawlNovelError.ERR_NONE;
     }
 
     private int fetchNovel(final Element element, final PPNovel novel) {

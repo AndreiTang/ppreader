@@ -15,7 +15,7 @@ import io.reactivex.ObservableEmitter;
 public class CrawlNovel implements ICrawlNovel {
 
     @Override
-    public int search(final String name,ObservableEmitter<PPNovel> e) {
+    public int search(final String name,ObservableEmitter<PPNovel> e, CrawlNovelResult crawlNovelResult) {
 
         String search[] = name.split("#");
         ArrayList<ICrawlNovel> engines = new ArrayList<ICrawlNovel>();
@@ -32,7 +32,7 @@ public class CrawlNovel implements ICrawlNovel {
         int ret = CrawlNovelError.ERR_NONE;
         for(int i = 0 ; i < engines.size(); i++){
             ICrawlNovel crawlNovel = engines.get(i);
-            ret = crawlNovel.search(name,e);
+            ret = crawlNovel.search(name,e,crawlNovelResult);
             if(ret == CrawlNovelError.ERR_NONE){
                 break;
             }
@@ -42,6 +42,12 @@ public class CrawlNovel implements ICrawlNovel {
         }
 
         return ret;
+    }
+
+    @Override
+    public int fetchNovels(String url, ObservableEmitter<PPNovel> e) {
+        ICrawlNovel crawlNovels = m_s_crawlNovelEngines.get(m_currEngineIndex);
+        return crawlNovels.fetchNovels(url,e);
     }
 
     @Override
