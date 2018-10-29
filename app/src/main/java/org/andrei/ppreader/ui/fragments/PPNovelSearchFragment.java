@@ -267,7 +267,9 @@ public class PPNovelSearchFragment extends Fragment {
                     if(ret == CrawlNovelError.ERR_NETWORK){
                         Integer i = R.string.err_network;
                         Throwable err = new Throwable(i.toString());
-                        e.onError(err);
+                        if(m_disposable != null && !m_disposable.isDisposed()){
+                            e.onError(err);
+                        }
                         return;
                     }
                     m_disposable = null;
