@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.widget.AbsListView;
 import android.widget.HeaderViewListAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
@@ -67,6 +68,7 @@ public class PPNovelSearchFragment extends Fragment {
         lv.setFooterDividersEnabled(false);
         lv.setSelected(true);
         lv.setVerticalScrollBarEnabled(false);
+        initScrollListener(lv);
 
         m_footView = getLayoutInflater().inflate(R.layout.view_ppnovel_search_foot, null);
 
@@ -234,19 +236,89 @@ public class PPNovelSearchFragment extends Fragment {
                 if (lv.getFooterViewsCount() == 1 && m_pageUrls.size() == 0) {
                     lv.removeFooterView(m_footView);
                 }
+                fetchRemainNovels();
             }
         });
     }
 
     private void fetchRemainNovels(){
-        ListView lv = (ListView) getView().findViewById(R.id.novel_search_ret_list);
-        if(lv.getLastVisiblePosition() != lv.getAdapter().getCount()){
+        final ListView lv = (ListView) getView().findViewById(R.id.novel_search_ret_list);
+        if(m_isLoading){
             return;
         }
         if (m_pageUrls.size() == 0){
             return;
         }
-        ICrawlNovel crawlNovel = CrawlNovelService.instance().builder(m_engineName);
+        if(lv.getLastVisiblePosition() != lv.getAdapter().getCount() - 1){
+            return;
+        }
+
+        final PPNovelSearchAdapter adapter = (PPNovelSearchAdapter) getAdapter();
+        m_isLoading = true;
+        Observable.create(new ObservableOnSubscribe<PPNovel>() {
+            @Override
+            public void subscribe(ObservableEmitter<PPNovel> e) throws Exception {
+                try{
+                    ICrawlNovel crawlNovel = CrawlNovelService.instance().builder(m_engineName);
+                    String url = m_pageUrls.remove(0);
+                    int ret = crawlNovel.fetchNovels(url,e);
+                    if(ret == CrawlNovelError.ERR_NETWORK){
+                        Integer i = R.string.err_network;
+                        Throwable err = new Throwable(i.toString());
+                        e.onError(err);
+                        return;
+                    }
+                    m_disposable = null;
+                    e.onComplete();
+                }catch(Exception ex){
+                    if(!m_disposable.isDisposed()){
+                        Integer i = R.string.err_network;
+                        Throwable err = new Throwable(i.toString());
+                        e.onError(err);
+                        m_disposable = null;
+                    }
+                }
+            }
+        }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<PPNovel>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+                m_disposable = d;
+            }
+
+            @Override
+            public void onNext(PPNovel ppNovel) {
+                if (adapter != null) {
+                    adapter.addSearch(ppNovel);
+                }
+                showLoadingMask(false);
+                lv.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        lv.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                        insertFootView();
+                    }
+                });
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                m_isLoading = false;
+                ListView lv = (ListView) getView().findViewById(R.id.novel_search_ret_list);
+                if (lv.getFooterViewsCount() == 1 && m_pageUrls.size() == 0) {
+                    lv.removeFooterView(m_footView);
+                }
+            }
+
+            @Override
+            public void onComplete() {
+                m_isLoading = false;
+                ListView lv = (ListView) getView().findViewById(R.id.novel_search_ret_list);
+                if (lv.getFooterViewsCount() == 1 && m_pageUrls.size() == 0) {
+                    lv.removeFooterView(m_footView);
+                }
+                fetchRemainNovels();
+            }
+        });
 
     }
 
@@ -266,12 +338,27 @@ public class PPNovelSearchFragment extends Fragment {
         tx.setText(err);
     }
 
+    private void initScrollListener(ListView lv){
+        lv.setOnScrollListener(new AbsListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+
+            }
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+                if(firstVisibleItem + visibleItemCount >= totalItemCount){
+                    fetchRemainNovels();
+                }
+            }
+        });
+    }
+
 
 
     private View m_footView = null;
     private boolean m_isLoading = false;
     private CrawlNovel m_crawlNovel = null;
-    private Disposable m_disposable;
+    private Disposable m_disposable = null;
     private ArrayList<String> m_pageUrls = new ArrayList<String>();
     private String m_engineName;
 

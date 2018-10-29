@@ -50,7 +50,7 @@ public class Crawl88dusNovel implements ICrawlNovel {
                     if(item.className().compareTo("btn_page") == 0){
                         continue;
                     }
-                    String href = item.attr("href");
+                    String href = "https://so.88dush.com" + item.attr("href");
                     ret.pageUrls.add(href);
                 }
             }
@@ -127,7 +127,7 @@ public class Crawl88dusNovel implements ICrawlNovel {
                 e.onNext(novel);
             }
             try {
-                Thread.sleep(5000);
+                Thread.sleep(500);
             } catch (InterruptedException e1) {
                 e1.printStackTrace();
                 return CrawlNovelError.ERR_NETWORK;
