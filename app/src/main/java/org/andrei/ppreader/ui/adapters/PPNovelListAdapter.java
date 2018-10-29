@@ -191,6 +191,8 @@ public class PPNovelListAdapter extends BaseAdapter{
 
                         CrawlChapterResult crawlChapterResult = new CrawlChapterResult();
                         int ret = crawlNovel.fetchChapters(novel,crawlChapterResult);
+                        crawlChapterResult.ret = ret;
+
                         if(ret == CrawlNovelError.ERR_NONE){
                             if(novel.chapters.size() < crawlChapterResult.chapters.size()){
                                 //there maybe some problems in the special case for tianyi engine
@@ -204,7 +206,8 @@ public class PPNovelListAdapter extends BaseAdapter{
                                 //it mean the red spot will not show , due to none of new chapters
                                 novel.status = PPNovel.STATUS_CONFIRMED;
                             }
-                            that.notifyDataSetChanged();
+                            e.onNext(novel);
+
                         }
 
                     }
@@ -212,17 +215,19 @@ public class PPNovelListAdapter extends BaseAdapter{
                     m_disposable = null;
                 }
                 catch(Exception ex){
-                    if(e.isDisposed()){
+                    if(!e.isDisposed()){
                         e.onComplete();
                         m_disposable = null;
                     }
                 }
 
             }
-        }).observeOn(Schedulers.io()).subscribeOn(AndroidSchedulers.mainThread()).subscribe(new Consumer<PPNovel>() {
+        }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new Consumer<PPNovel>() {
             @Override
             public void accept(PPNovel novel) throws Exception {
-
+                if(novel.status == PPNovel.STATUS_CHECKED){
+                    that.notifyDataSetChanged();
+                }
             }
         });
     }

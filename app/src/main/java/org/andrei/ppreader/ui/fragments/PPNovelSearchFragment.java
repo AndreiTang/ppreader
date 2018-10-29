@@ -102,13 +102,13 @@ public class PPNovelSearchFragment extends Fragment {
 
     @Override
     public void onStop() {
-        super.onStop();
         if (m_disposable != null) {
             if (!m_disposable.isDisposed()) {
                 m_disposable.dispose();
             }
             m_disposable = null;
         }
+        super.onStop();
     }
 
     private void insertFootView() {
@@ -183,7 +183,9 @@ public class PPNovelSearchFragment extends Fragment {
                     else if(ret == CrawlNovelError.ERR_NETWORK){
                         Integer i = R.string.err_network;
                         Throwable err = new Throwable(i.toString());
-                        e.onError(err);
+                        if(m_disposable != null&& !m_disposable.isDisposed()){
+                            e.onError(err);
+                        }
                     }
                     else{
                         m_pageUrls = crawlNovelResult.pageUrls;
@@ -197,8 +199,8 @@ public class PPNovelSearchFragment extends Fragment {
                         Integer i = R.string.err_network;
                         Throwable err = new Throwable(i.toString());
                         e.onError(err);
-                        m_disposable = null;
                     }
+                    m_disposable = null;
                 }
             }
         }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<PPNovel>() {

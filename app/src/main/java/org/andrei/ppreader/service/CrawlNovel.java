@@ -19,11 +19,14 @@ public class CrawlNovel implements ICrawlNovel {
 
         String search[] = name.split("#");
         ArrayList<ICrawlNovel> engines = new ArrayList<ICrawlNovel>();
+        String novelName = name;
         if(search[0].compareTo("0") == 0){
             engines.add(m_s_crawlNovelEngines.get(0));
+            novelName = search[1];
         }
         else if(search[0].compareTo("1") == 0){
             engines.add(m_s_crawlNovelEngines.get(1));
+            novelName = search[1];
         }
         else{
             engines.addAll(m_s_crawlNovelEngines);
@@ -32,7 +35,7 @@ public class CrawlNovel implements ICrawlNovel {
         int ret = CrawlNovelError.ERR_NONE;
         for(int i = 0 ; i < engines.size(); i++){
             ICrawlNovel crawlNovel = engines.get(i);
-            ret = crawlNovel.search(name,e,crawlNovelResult);
+            ret = crawlNovel.search(novelName,e,crawlNovelResult);
             if(ret == CrawlNovelError.ERR_NONE){
                 break;
             }
