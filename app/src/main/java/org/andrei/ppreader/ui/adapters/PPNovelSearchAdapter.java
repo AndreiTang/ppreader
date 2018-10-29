@@ -112,7 +112,7 @@ public class PPNovelSearchAdapter extends BaseAdapter {
 
         ImageView img = (ImageView) view.findViewById(R.id.novel_search_cover);
         Glide.with(view).clear(img);
-        Glide.with(view).load(novel.imgUrl).apply(RequestOptions.fitCenterTransform()).into(img);
+        Glide.with(view).load(novel.imgUrl).apply(RequestOptions.fitCenterTransform().error(R.drawable.nocover)).into(img);
 
         view.setTag(R.id.tag_pos,i);
 

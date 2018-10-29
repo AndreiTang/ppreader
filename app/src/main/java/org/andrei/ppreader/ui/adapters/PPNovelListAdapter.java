@@ -112,7 +112,7 @@ public class PPNovelListAdapter extends BaseAdapter{
         PPNovel novel = CrawlNovelService.instance().getPPNovels().get(i);
         ImageView img = (ImageView) view.findViewById(R.id.novel_list_cover);
         Glide.with(view).clear(img);
-        Glide.with(view).load(novel.imgUrl).apply(RequestOptions.fitCenterTransform()).into(img);
+        Glide.with(view).load(novel.imgUrl).apply(RequestOptions.fitCenterTransform().error(R.drawable.nocover)).into(img);
         TextView tv = (TextView)view.findViewById(R.id.novel_list_title);
         tv.setText(novel.name);
         view.setTag(R.id.tag_pos,i);
