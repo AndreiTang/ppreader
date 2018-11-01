@@ -9,8 +9,9 @@ import org.andrei.ppreader.ui.fragments.PPNovelSearchFragment;
 
 public class PPNovelMainAdapter extends FragmentPagerAdapter {
 
-    public PPNovelMainAdapter(FragmentManager fm) {
+    public PPNovelMainAdapter(FragmentManager fm,Fragment[] fragments) {
         super(fm);
+        m_fragments = fragments;
     }
 
     @Override
@@ -20,9 +21,9 @@ public class PPNovelMainAdapter extends FragmentPagerAdapter {
 
     @Override
     public int getCount() {
-        return 2;
+        return m_fragments.length;
     }
 
-    Fragment[] m_fragments = {new PPNovelListFragment(),new PPNovelSearchFragment()};
+    Fragment[] m_fragments = null;
 
 }

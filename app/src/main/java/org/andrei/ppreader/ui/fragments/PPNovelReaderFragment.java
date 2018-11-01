@@ -40,6 +40,7 @@ import org.andrei.ppreader.ui.adapters.PPNovelReaderAdapter;
 import org.andrei.ppreader.ui.helper.PPNovelReaderPageManager;
 import org.andrei.ppreader.ui.helper.PPNovelRxBinding;
 import org.andrei.ppreader.ui.helper.PPNovelTextPage;
+import org.andrei.ppreader.ui.helper.Utils;
 import org.andrei.ppreader.ui.views.PPNovelReaderControlPanel;
 
 import java.util.ArrayList;
@@ -78,8 +79,6 @@ public class PPNovelReaderFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState) {
 
         super.onActivityCreated(savedInstanceState);
-
-
 
         Bundle arg = getArguments();
         if(arg != null){
@@ -478,6 +477,7 @@ public class PPNovelReaderFragment extends Fragment {
         showChapterInfo(chapter);
         m_novel.currentChapterIndex = m_novel.getPPNovelPosition(chapter.url);
         m_novel.currentChapterOffset = item.offset;
+        Utils.log(m_novel.currentChapterIndex + " is current page");
     }
 
     private void showChapterInfo(PPNovelChapter chapter) {

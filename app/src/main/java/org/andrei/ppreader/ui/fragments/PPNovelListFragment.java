@@ -74,13 +74,7 @@ public class PPNovelListFragment extends Fragment {
         RxView.clicks(v).throttleFirst(1,TimeUnit.SECONDS).subscribe(new Consumer<Object>() {
             @Override
             public void accept(Object o) throws Exception {
-                getView().findViewById(R.id.novel_list_edit_btn).setVisibility(View.VISIBLE);
-                getView().findViewById(R.id.novel_list_remove_btn).setVisibility(View.GONE);
-                ArrayList<PPNovel> novels = CrawlNovelService.instance().getPPNovels();
-                for(PPNovel novel: novels){
-                    novel.needRemove = false;
-                }
-                that.notifyDataSetChanged();
+                restore();
             }
         });
 
@@ -103,6 +97,18 @@ public class PPNovelListFragment extends Fragment {
             adapter.disposable();
         }
         super.onDestroyView();
+    }
+
+    public void restore(){
+        getView().findViewById(R.id.novel_list_edit_btn).setVisibility(View.VISIBLE);
+        getView().findViewById(R.id.novel_list_remove_btn).setVisibility(View.GONE);
+        ArrayList<PPNovel> novels = CrawlNovelService.instance().getPPNovels();
+        for(PPNovel novel: novels){
+            novel.needRemove = false;
+        }
+        GridView vp = (GridView) getView().findViewById(R.id.novel_list);
+        PPNovelListAdapter adapter  =  (PPNovelListAdapter)vp.getAdapter();
+        adapter.notifyDataSetChanged();
     }
 
 

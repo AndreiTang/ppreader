@@ -8,6 +8,12 @@ import android.text.TextUtils;
 import android.text.style.ScaleXSpan;
 import android.widget.TextView;
 
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.util.Calendar;
+
 public class Utils {
 
     /**
@@ -142,6 +148,32 @@ public class Utils {
         return spannableStringBuilder;
     }
 
+    public static void setLogPath(String path){
+        m_fileName = path;
+    }
 
+    public static void log(String msg){
+        FileOutputStream fos = null;
+        BufferedWriter bw = null;
+        try {
+
+            Calendar calendar = Calendar.getInstance();
+            String time  = String.format("%02d:%02d:%02d  ",
+                    calendar.get(Calendar.HOUR_OF_DAY),
+                    calendar.get(Calendar.MINUTE),
+                    calendar.get(Calendar.SECOND));
+
+            String log = time +  msg + "\r\n";
+            fos = new FileOutputStream(m_fileName, true);
+            bw = new BufferedWriter(new OutputStreamWriter(fos));
+            bw.write(log);
+            bw.close();
+        }  catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private static String m_fileName;
 
 }

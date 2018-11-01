@@ -11,6 +11,9 @@ import android.view.ViewGroup;
 
 import org.andrei.ppreader.R;
 import org.andrei.ppreader.ui.adapters.PPNovelMainAdapter;
+import org.andrei.ppreader.ui.helper.PPNovelRxBinding;
+
+import io.reactivex.functions.Consumer;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -46,14 +49,23 @@ public class PPNovelMainFragment extends Fragment {
             pos = arg.getInt(POS);
         }
 
-        PPNovelMainAdapter adapter = new PPNovelMainAdapter(this.getChildFragmentManager());
+        PPNovelMainAdapter adapter = new PPNovelMainAdapter(this.getChildFragmentManager(),m_fragments);
         ViewPager vp = (ViewPager)getView().findViewById(R.id.main_viewpager);
         vp.setAdapter(adapter);
         vp.setCurrentItem(pos);
 
+        PPNovelRxBinding.pageSelected(vp).subscribe(new Consumer<Integer>() {
+            @Override
+            public void accept(Integer position) throws Exception {
+                if(position == 1){
+                    PPNovelListFragment fragment = (PPNovelListFragment)m_fragments[0];
+                    fragment.restore();
+                }
+            }
+        });
+
     }
 
-
-
+    private Fragment[] m_fragments = {new PPNovelListFragment(),new PPNovelSearchFragment()};
 
 }

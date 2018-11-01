@@ -21,8 +21,10 @@ import org.andrei.ppreader.service.PPNovel;
 import org.andrei.ppreader.ui.fragments.PPNovelCoverFragment;
 import org.andrei.ppreader.ui.fragments.PPNovelMainFragment;
 import org.andrei.ppreader.ui.fragments.PPNovelReaderFragment;
+import org.andrei.ppreader.ui.helper.Utils;
 
 import java.io.Console;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -81,6 +83,17 @@ public class MainActivity extends FragmentActivity {
             }
         }
         changeStatusBarColor();
+
+        Calendar calendar = Calendar.getInstance();
+        String fileName  = String.format("ppreader_log_%04d%02d%02d_%02d%02d%02d.txt",
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH),
+                calendar.get(Calendar.HOUR_OF_DAY),
+                calendar.get(Calendar.MINUTE),
+                calendar.get(Calendar.SECOND));
+
+        Utils.setLogPath(getBaseContext().getExternalFilesDir(null).getPath() + "/" + fileName);
 
     }
 

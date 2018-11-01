@@ -94,8 +94,6 @@ public class PPNovelReaderAdapter extends PagerAdapter {
         } else if (item.status == PPNovelTextPage.STATUS_LOADED) {
             item.status = PPNovelTextPage.STATUS_OK;
             update(position);
-
-
         } else {
             update(position);
         }

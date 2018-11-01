@@ -18,6 +18,7 @@ import org.andrei.ppreader.service.PPNovelChapter;
 
 
 import java.util.ArrayList;
+import java.util.logging.Logger;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
@@ -75,9 +76,13 @@ public class PPNovelReaderPageManager {
     public void fetchChapterText(@NonNull final PPNovelTextPage page) {
         PPNovelChapter chapter = m_novel.getPPNovelChapter(page.chapter);
         if (chapter == null) {
+            Utils.log(page.title + " isn't found in the fetchList");
             return;
         }
         m_fetchList.add(chapter);
+        if(!m_isRunning){
+            Utils.log(chapter.name + "isn't add in the fetchList");
+        }
     }
 
     public Observable<Integer> fetchChapterTextObserve(){
@@ -85,6 +90,7 @@ public class PPNovelReaderPageManager {
             @Override
             public void subscribe(ObservableEmitter<Integer> e) throws Exception {
                 try{
+                    m_isRunning = true;
                     while (true) {
                         if(m_fetchList.size() == 0){
                             Thread.sleep(100);
@@ -99,17 +105,20 @@ public class PPNovelReaderPageManager {
                             chapter.text = crawlTextResult.text;
                             page.text = crawlTextResult.text;
                             page.status = PPNovelTextPage.STATUS_LOADED;
-
+                            Utils.log(page.title + "has fetched text");
                         }
                         else{
                             page.status = PPNovelTextPage.STATUS_FAIL;
+                            Utils.log(page.title + "has not fetched text");
                         }
+
                         e.onNext(index);
                     }
                 }
                 catch (Exception ex){
                 }
 
+                m_isRunning = false;
             }
         }).subscribeOn(Schedulers.io());
     }
@@ -147,6 +156,7 @@ public class PPNovelReaderPageManager {
                     if (item == null) {
                         item = new PPNovelTextPage();
                         item.offset = offset;
+                        item.title = firstPage.title;
                         pages.add(item);
                     }
                     pageTextHeight = 0;
@@ -249,4 +259,5 @@ public class PPNovelReaderPageManager {
     private CrawlNovel m_crawlNovel = null;
     private PPNovel m_novel;
     private ArrayList<PPNovelChapter> m_fetchList = new ArrayList<PPNovelChapter>();
+    private boolean m_isRunning = false;
 }
