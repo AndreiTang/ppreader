@@ -116,6 +116,7 @@ public class PPNovelReaderPageManager {
                     }
                 }
                 catch (Exception ex){
+                    
                 }
 
                 m_isRunning = false;

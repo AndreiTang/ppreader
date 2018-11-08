@@ -74,15 +74,14 @@ public class Crawl88dusNovel implements ICrawlNovel {
 
     @Override
     public int fetchChapters(final PPNovel novel, CrawlChapterResult ret) {
-        ret = new CrawlChapterResult();
         ret.chapterUrl = novel.chapterUrl;
         Document doc = null;
         try {
             doc = Jsoup.connect(novel.chapterUrl).timeout(18000).get();
-            return  fetchChaptersInner(doc,novel.chapterUrl,ret.chapters);
         } catch (IOException e) {
             return CrawlNovelError.ERR_NETWORK;
         }
+        return  fetchChaptersInner(doc,novel.chapterUrl,ret.chapters);
     }
 
     @Override
