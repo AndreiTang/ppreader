@@ -181,6 +181,7 @@ public class PPNovelReaderFragment extends Fragment {
         final ViewPager vp = (ViewPager) getView().findViewById(R.id.novel_reader_pager);
         PPNovelReaderAdapter adapter = (PPNovelReaderAdapter)vp.getAdapter();
         adapter.clear();
+        Utils.log("Fragment destroyed");
         super.onDestroyView();
     }
 
@@ -322,34 +323,44 @@ public class PPNovelReaderFragment extends Fragment {
 
     private void initViewPager(@NonNull final View root) {
         final Fragment parent = this;
+        int h1 = getView().findViewById(R.id.novel_action_bar).getMeasuredHeight();
+        if(h1 > 0){
+            initViewPagerInner(parent);
+        }
+        else{
+            root.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    root.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    initViewPagerInner(parent);
+                }
+            });
+        }
+
+        initViewPagerTouch();
+    }
+
+
+    private void initViewPagerInner(final Fragment parent){
         //With full screen , content view(root) can't get the correct size . It cause the viewpager can't get the correct size as well.
         //We directly use the screen height by  DisplayMetrics
-        root.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                root.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+        final ViewPager vp = (ViewPager) getView().findViewById(R.id.novel_reader_pager);
+        DisplayMetrics dm = getResources().getDisplayMetrics();
+        int h = dm.heightPixels;
+        int h1 = getView().findViewById(R.id.novel_action_bar).getMeasuredHeight();
+        int h2 = getView().findViewById(R.id.novel_bottom_bar).getMeasuredHeight();
+        int tvHeight = h - h1 - h2;
+        m_pageMgr = new PPNovelReaderPageManager(m_novel, tvHeight);
 
-                final ViewPager vp = (ViewPager) getView().findViewById(R.id.novel_reader_pager);
-                root.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                DisplayMetrics dm = getResources().getDisplayMetrics();
-                int h = dm.heightPixels;
-                int h1 = getView().findViewById(R.id.novel_action_bar).getMeasuredHeight();
-                int h2 = getView().findViewById(R.id.novel_bottom_bar).getMeasuredHeight();
-                int tvHeight = h - h1 - h2;
-                m_pageMgr = new PPNovelReaderPageManager(m_novel, tvHeight);
+        final PPNovelReaderAdapter adapter = new PPNovelReaderAdapter(parent, m_pageMgr);
+        vp.setAdapter(adapter);
 
-                final PPNovelReaderAdapter adapter = new PPNovelReaderAdapter(parent, m_pageMgr);
-                vp.setAdapter(adapter);
+        PPNovelChapter chapter = m_novel.chapters.get(m_novel.currentChapterIndex);
+        showChapterInfo(chapter);
+        vp.setCurrentItem(m_novel.currentChapterIndex + m_novel.currentChapterOffset);
 
-                PPNovelChapter chapter = m_novel.chapters.get(m_novel.currentChapterIndex);
-                showChapterInfo(chapter);
-                vp.setCurrentItem(m_novel.currentChapterIndex + m_novel.currentChapterOffset);
-
-                initPPNovelDictAdapter();
-                initPPNovelDictGroupAdapter();
-            }
-        });
-        initViewPagerTouch();
+        initPPNovelDictAdapter();
+        initPPNovelDictGroupAdapter();
     }
 
     //initialize the control panel
