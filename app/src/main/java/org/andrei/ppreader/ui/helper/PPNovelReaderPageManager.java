@@ -96,7 +96,9 @@ public class PPNovelReaderPageManager {
                             Thread.sleep(100);
                             continue;
                         }
+                        Thread.sleep(5000);
                         PPNovelChapter chapter = m_fetchList.remove(0);
+                        //PPNovelChapter chapter = m_fetchList.get(0);
                         CrawlTextResult crawlTextResult = new CrawlTextResult();
                         int ret = m_crawlNovel.fetchNovelText(m_novel.chapterUrl, chapter.url,crawlTextResult);
                         PPNovelTextPage page = getItem(crawlTextResult.chapterUrl, 0);
@@ -116,7 +118,13 @@ public class PPNovelReaderPageManager {
                     }
                 }
                 catch (Exception ex){
-                    
+                   StackTraceElement ele[] = ex.getStackTrace();
+                   Utils.log("Stack===========================");
+                   for(StackTraceElement item : ele){
+                       String msg = item.toString();
+                       Utils.log(msg);
+                   }
+                    Utils.log("Stack end=====================\r\n");
                 }
 
                 m_isRunning = false;
