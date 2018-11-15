@@ -87,6 +87,9 @@ public class Crawl88dusNovel implements ICrawlNovel {
     @Override
     public int fetchNovelText(final String novelId, final String chapterUrl,CrawlTextResult ret) {
         try{
+            ret.chapterUrl = chapterUrl;
+            ret.novelUrl = novelId;
+
             Document doc = Jsoup.connect(chapterUrl).timeout(18000).get();
             Element item = doc.getElementsByClass("yd_text2").get(0);
             String text = item.html();
@@ -94,9 +97,6 @@ public class Crawl88dusNovel implements ICrawlNovel {
                 return CrawlNovelError.ERR_NONE_FETCHED;
             }
             text = Utils.adjustText(text);
-
-            ret.chapterUrl = chapterUrl;
-            ret.novelUrl = novelId;
             ret.text = text;
 
             return CrawlNovelError.ERR_NONE;
